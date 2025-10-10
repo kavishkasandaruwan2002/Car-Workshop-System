@@ -15,7 +15,7 @@ export async function listJobs(req, res, next) {
       .populate({ path: 'appointment', select: 'customerName vehicle serviceType preferredDate' })
       .sort({ createdAt: -1 });
 
-    // If the requester is a customer, only show jobs for their cars (by email)
+  
     const isCustomer = req.user?.role === 'customer' && req.user?.email;
     if (isCustomer) {
       // We will filter after population since car is embedded via populate
