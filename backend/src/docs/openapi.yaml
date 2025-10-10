@@ -1,0 +1,87 @@
+openapi: 3.0.0
+info:
+  title: WEB_APP API
+  version: 1.0.0
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /version:
+    get:
+      summary: API version
+      responses:
+        '200': { description: Success }
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200': { description: Success }
+  /cars:
+    get:
+      summary: List cars
+      responses:
+        '200': { description: Success }
+    post:
+      summary: Create car
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                licensePlate: { type: string }
+                customerName: { type: string }
+                customerPhone: { type: string }
+                customerEmail: { type: string }
+                make: { type: string }
+                model: { type: string }
+                year: { type: integer }
+                color: { type: string }
+                vin: { type: string }
+      responses:
+        '201': { description: Created }
+  /jobs:
+    get:
+      summary: List jobs
+      responses:
+        '200': { description: Success }
+    post:
+      summary: Create job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                car: { type: string }
+                assignedMechanic: { type: string }
+                tasks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      description: { type: string }
+                      completed: { type: boolean }
+                estimatedCompletion: { type: string, format: date }
+      responses:
+        '201': { description: Created }
+
+
