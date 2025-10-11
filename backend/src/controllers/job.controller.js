@@ -3,6 +3,7 @@ import { Car } from '../models/Car.js';
 import { StatusCodes } from 'http-status-codes';
 import { mapArrayId, mapId } from '../middleware/transformResponse.js';
 
+
 export async function listJobs(req, res, next) {
   try {
     const { page = 1, limit = 10, status } = req.query;
