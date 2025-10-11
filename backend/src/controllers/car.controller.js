@@ -26,7 +26,7 @@ import { mapArrayId, mapId } from '../middleware/transformResponse.js';
  * This is the primary endpoint used by the receptionist dashboard to display
  * all customer vehicles in a searchable, paginated table/grid format.
  * 
- * RECEPTIONIST USE CASES:
+ 
  * - View all customer car profiles in the dashboard
  * - Search for specific vehicles by license plate, customer info, or car details
  * - Navigate through multiple pages of car records
