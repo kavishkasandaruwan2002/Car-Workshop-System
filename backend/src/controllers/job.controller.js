@@ -60,8 +60,7 @@ export async function createJob(req, res, next) {
         });
       }
     }
-    
-    // Validate appointment exists if provided
+        // Validate appointment exists if provided
     if (body.appointment) {
       const { Appointment } = await import('../models/Appointment.js');
       const appointmentExists = await Appointment.findById(body.appointment).select('_id');
@@ -74,6 +73,7 @@ export async function createJob(req, res, next) {
       }
     }
     
+
     // Validate that at least one of car or appointment is provided
     if (!body.car && !body.appointment) {
       return res.status(StatusCodes.BAD_REQUEST).json({ 
