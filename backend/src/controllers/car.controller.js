@@ -32,7 +32,7 @@ import { mapArrayId, mapId } from '../middleware/transformResponse.js';
  * - Navigate through multiple pages of car records
  * - Quick lookup during customer service calls or walk-ins
  * 
- * @param {Object} req - Express request object
+ * @param {Object} req 
  * @param {string} req.query.page - Page number for pagination (default: 1)
  * @param {string} req.query.limit - Records per page (default: 10)
  * @param {string} req.query.search - Search term for filtering cars
