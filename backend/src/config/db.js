@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { logger } from '../utils/logger.js';
 
-export async function connectToDatabase() {
+export async function connectToDatabase() {//connect mongo db
   const mongoUri = process.env.MONGODB_URI;
   if (!mongoUri) {
     throw new Error('MONGODB_URI is not defined');
@@ -10,7 +10,7 @@ export async function connectToDatabase() {
   await mongoose.connect(mongoUri, {
     autoIndex: true
   });
-  logger.info('Connected to MongoDB');
+  logger.info('Connected to MongoDB');//connect mongo db
 }
 
 
