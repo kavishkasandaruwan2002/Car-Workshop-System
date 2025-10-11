@@ -12,17 +12,7 @@ import { InventoryItem } from '../models/InventoryItem.js';
 import { StatusCodes } from 'http-status-codes';
 import { mapArrayId, mapId } from '../middleware/transformResponse.js';
 
-/**
- * LIST INVENTORY ITEMS - GET /inventory
- * 
- * Retrieves inventory items with pagination and search functionality.
- * Supports text search on item names (case-insensitive).
- * 
- * Query Parameters:
- * - page: Page number for pagination (default: 1)
- * - limit: Items per page (default: 10)  
- * - search: Text search in item names (optional)
- */
+
 export async function listInventory(req, res, next) {
   try {
     // Extract query parameters with defaults
