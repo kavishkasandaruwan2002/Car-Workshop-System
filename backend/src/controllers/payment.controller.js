@@ -1,7 +1,7 @@
 import { Payment } from '../models/Payment.js';
 import { StatusCodes } from 'http-status-codes';
 import { mapArrayId, mapId } from '../middleware/transformResponse.js';
-
+//payment
 export async function listPayments(req, res, next) {
   try {
     const { page = 1, limit = 10 } = req.query;
