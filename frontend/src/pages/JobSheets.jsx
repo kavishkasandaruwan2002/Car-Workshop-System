@@ -59,7 +59,7 @@ const JobSheets = () => {
   useEffect(() => {
     (async () => {
       try {
-        // Ensure cars are loaded for car dropdown and job rendering
+       
         if (!state.cars || state.cars.length === 0) {
           await loadCars();
         }

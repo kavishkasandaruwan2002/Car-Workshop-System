@@ -3,6 +3,7 @@ import { Car } from '../models/Car.js';
 import { StatusCodes } from 'http-status-codes';
 import { mapArrayId, mapId } from '../middleware/transformResponse.js';
 
+
 export async function listJobs(req, res, next) {
   try {
     const { page = 1, limit = 10, status } = req.query;
@@ -15,7 +16,7 @@ export async function listJobs(req, res, next) {
       .populate({ path: 'appointment', select: 'customerName vehicle serviceType preferredDate' })
       .sort({ createdAt: -1 });
 
-    // If the requester is a customer, only show jobs for their cars (by email)
+  
     const isCustomer = req.user?.role === 'customer' && req.user?.email;
     if (isCustomer) {
       // We will filter after population since car is embedded via populate
@@ -59,8 +60,7 @@ export async function createJob(req, res, next) {
         });
       }
     }
-    
-    // Validate appointment exists if provided
+        // Validate appointment exists if provided
     if (body.appointment) {
       const { Appointment } = await import('../models/Appointment.js');
       const appointmentExists = await Appointment.findById(body.appointment).select('_id');
@@ -73,6 +73,7 @@ export async function createJob(req, res, next) {
       }
     }
     
+
     // Validate that at least one of car or appointment is provided
     if (!body.car && !body.appointment) {
       return res.status(StatusCodes.BAD_REQUEST).json({ 
