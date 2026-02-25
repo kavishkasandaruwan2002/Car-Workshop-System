@@ -1,325 +1,220 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import ParticleBackground from '../components/ParticleBackground';
-import { motion } from 'framer-motion';
-import { ImagesSlider } from '@/components/ui/images-slider';
-import { Header1 } from '@/components/ui/header';
-import { NotificationInboxPopover } from '@/components/ui/notification-inbox-popover';
-import { ThemeSwitch } from '@/components/ui/theme-switch-button';
-import UserFeedbackBlock from '@/components/ui/user-feedback-block';
-import { 
-  Wrench, 
-  Users, 
-  Shield, 
-  Clock, 
-  Star, 
-  ArrowRight
+import { motion, useScroll, useTransform } from 'framer-motion';
+import {
+  Wrench,
+  Shield,
+  Clock,
+  Star,
+  ChevronRight,
+  Activity,
+  Award,
+  Zap,
+  Cpu,
+  MousePointer2,
+  CheckCircle2,
+  ArrowUpRight
 } from 'lucide-react';
+import { Header1 } from '../components/ui/header';
 
-// Define static testimonials before any hooks so they are available for effect deps
-const testimonials = [
-  {
-    name: "John Smith",
-    role: "Car Owner",
-    content: "Excellent service! My car was fixed quickly and professionally.",
-    rating: 5
-  },
-  {
-    name: "Sarah Johnson",
-    role: "Fleet Manager",
-    content: "The best auto repair shop in town. Highly recommended!",
-    rating: 5
-  },
-  {
-    name: "Mike Davis",
-    role: "Business Owner",
-    content: "Reliable, honest, and affordable. Perfect for our company vehicles.",
-    rating: 5
-  }
-];
+const Hero = () => {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
-const LandingPage = () => {
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
+  return (
+    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+      {/* Dynamic Background Elements */}
+      <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px]" />
+        <div className="absolute top-[20%] right-[10%] w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[100px]" />
+      </motion.div>
 
-  useEffect(() => {
-    setIsVisible(true);
-    const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+      <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="inline-flex items-center gap-2 px-5 py-2 mb-10 rounded-full bg-slate-900 text-white border border-slate-800 text-[10px] font-black uppercase tracking-[0.4em] shadow-2xl"
+        >
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          The Standard of Excellence
+        </motion.div>
 
-  const features = [
-    {
-      icon: <Wrench className="w-8 h-8" />,
-      title: "Expert Mechanics",
-      description: "Professional mechanics with years of experience"
-    },
-    {
-      icon: <Clock className="w-8 h-8" />,
-      title: "Quick Service",
-      description: "Fast and efficient repair services"
-    },
-    {
-      icon: <Shield className="w-8 h-8" />,
-      title: "Quality Guarantee",
-      description: "100% satisfaction guarantee on all services"
-    },
-    {
-      icon: <Users className="w-8 h-8" />,
-      title: "Customer Support",
-      description: "24/7 customer support and assistance"
-    }
-  ];
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-7xl md:text-[10rem] font-black text-slate-950 dark:text-white mb-10 tracking-[ -0.05em] leading-[0.85]"
+        >
+          PRECISION <br />
+          <span className="gradient-text">GARAGE</span>
+        </motion.h1>
 
-  const stats = [
-    { number: "500+", label: "Cars Repaired" },
-    { number: "50+", label: "Happy Customers" },
-    { number: "5+", label: "Years Experience" },
-    { number: "24/7", label: "Support Available" }
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.8 }}
+          className="text-xl md:text-2xl text-slate-500 font-medium max-w-3xl mx-auto mb-16 leading-relaxed"
+        >
+          PUEFix systems integrate master-level artisan engineering with next-generation diagnostic protocols. Experience the pinnacle of automotive optimization.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-col sm:flex-row gap-8 justify-center items-center"
+        >
+          <Link to="/register" className="btn-primary !h-20 !px-12 !text-[12px] !tracking-[0.3em] shadow-[0_20px_60px_-15px_rgba(37,99,235,0.4)] hover:-translate-y-1 transition-all group">
+            INITIALIZE PROTOCOL <ArrowUpRight className="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+          </Link>
+          <Link to="/login" className="px-10 py-5 text-[12px] font-black tracking-[0.3em] text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+            SECURE ACCESS
+          </Link>
+        </motion.div>
+      </div>
+
+      {/* Floating Indicators */}
+      <motion.div
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 4, repeat: Infinity }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-slate-300 dark:text-slate-700 font-black text-[9px] uppercase tracking-[0.5em] flex flex-col items-center gap-4"
+      >
+        <span>SCROLL TO DISCOVER</span>
+        <div className="w-px h-12 bg-gradient-to-b from-blue-500 to-transparent" />
+      </motion.div>
+    </section>
+  );
+};
+
+const ProtocolSection = () => {
+  const steps = [
+    { n: "01", t: "Ingestion", d: "Digital twin generation and comprehensive diagnostic sweep using proprietary sensor arrays.", i: Cpu },
+    { n: "02", t: "Optimization", d: "Surgical execution by master technicians following the PUEFix precision directive.", i: Wrench },
+    { n: "03", t: "Verification", d: "Multi-point safety validation and performance benchmarking against global standards.", i: Shield },
+    { n: "04", t: "Delivery", d: "Bespoke hand-over with full digital operational history and lifetime integrity certificate.", i: CheckCircle2 }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative">
-      <ParticleBackground />
-      {/* Shared Header */}
+    <section className="py-40 bg-slate-50 dark:bg-slate-950/50">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div>
+            <div className="inline-block px-4 py-1.5 mb-8 rounded-full bg-blue-500/10 text-blue-600 text-[10px] font-black uppercase tracking-[0.3em]">
+              The Methodology
+            </div>
+            <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white mb-10 tracking-tighter leading-tight">
+              A MASTERPIECE <br />
+              <span className="text-blue-600 italic font-serif">In Every Bolt</span>
+            </h2>
+            <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-lg">
+              We've digitized the traditional garage experience to provide absolute transparency and clinical precision for high-performance automotive platforms.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {steps.map((s, idx) => (
+              <div key={idx} className="premium-card !p-8 !rounded-[2.5rem] hover:bg-slate-900 hover:text-white group transition-all duration-500">
+                <div className="flex justify-between items-start mb-10">
+                  <div className="p-4 bg-blue-600/10 text-blue-600 rounded-2xl group-hover:bg-white group-hover:text-slate-900 transition-colors">
+                    <s.i className="w-6 h-6" />
+                  </div>
+                  <span className="text-sm font-black text-slate-200 group-hover:text-white/20">{s.n}</span>
+                </div>
+                <h3 className="text-xl font-black uppercase tracking-tight mb-4">{s.t}</h3>
+                <p className="text-xs font-medium text-slate-500 group-hover:text-slate-400 leading-relaxed">{s.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const LandingPage = () => {
+  return (
+    <div className="min-h-screen bg-white dark:bg-slate-950 selection:bg-blue-600 selection:text-white">
+      {/* Header handled by App.jsx or injected if needed */}
       <Header1 />
 
-      {/* Hero Section with Images Slider */}
-      <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-9xl mx-auto">
-          <ImagesSlider
-            className="h-[130vh] md:h-[80vh] rounded-2xl overflow-hidden"
-            images={[
-              // Car images (direct Unsplash image URLs)
-              'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=2400&auto=format&fit=crop&ixlib=rb-4.0.3',
-              
-              'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?q=80&w=2400&auto=format&fit=crop&ixlib=rb-4.0.3',
-              'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2400&auto=format&fit=crop&ixlib=rb-4.0.3',
-              'https://images.unsplash.com/photo-1504215680853-026ed2a45def?q=80&w=2400&auto=format&fit=crop&ixlib=rb-4.0.3'
-            ]}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: -40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="z-50 flex flex-col items-center justify-center text-center px-4"
-            >
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow">
-                Professional
-                <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent"> Auto Repair</span>
-                <br />
-                Made Simple
-              </h1>
-              <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto mb-8">
-                Experience top-quality automotive services with our expert mechanics. From routine
-                maintenance to complex repairs, we've got you covered.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  to="/register"
-                  className="px-8 py-4 rounded-full text-lg font-semibold bg-white text-blue-600 hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
-                >
-                  <span>Get Started</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="px-8 py-4 rounded-full text-lg font-semibold border border-white/70 text-white hover:bg-white/10 transition-all duration-200 transform hover:scale-105"
-                >
-                  Sign In
-                </Link>
-              </div>
-            </motion.div>
-          </ImagesSlider>
-        </div>
-      </section>
+      <Hero />
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose PUEFix Garage?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We provide comprehensive automotive services with a focus on quality, 
-              reliability, and customer satisfaction.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className={`text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 transform hover:scale-105 hover:shadow-lg ${
-                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                }`}
-                style={{ transitionDelay: `${index * 100}ms` }}
-              >
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white mx-auto mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600">
-                  {feature.description}
-                </p>
-              </div>
+      {/* Trust Bar */}
+      <section className="border-y border-slate-100 dark:border-slate-900 py-12">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-30 grayscale hover:grayscale-0 transition-all">
+            {['VOLKSWAGEN', 'PORSCHE', 'MERCEDES', 'AUDI', 'BMW', 'TESLA'].map(brand => (
+              <span key={brand} className="text-xs font-black tracking-[0.5em]">{brand}</span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                className="text-center text-white"
-              >
-                <div className="text-4xl md:text-5xl font-bold mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-lg text-blue-100">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ProtocolSection />
 
-      {/* Testimonials Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              What Our Customers Say
-            </h2>
-            <p className="text-xl text-gray-600">
-              Don't just take our word for it - hear from our satisfied customers
-            </p>
-          </div>
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <blockquote className="text-xl text-gray-700 mb-6 italic">
-                  "{testimonials[currentTestimonial].content}"
-                </blockquote>
-                <div className="text-lg font-semibold text-gray-900">
-                  {testimonials[currentTestimonial].name}
-                </div>
-                <div className="text-gray-600">
-                  {testimonials[currentTestimonial].role}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-center mt-6 space-x-2">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentTestimonial ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Feedback Section */}
-      <section className="py-16 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-8">
-            Share Your Feedback
-          </h2>
-          <UserFeedbackBlock />
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Get Started?
-          </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who trust PUEFix Garage for their automotive needs.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/register"
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
-            >
-              <span>Create Account</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link
-              to="/login"
-              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-blue-600 transition-all duration-200 transform hover:scale-105"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                  <Wrench className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold">PUEFix Garage</span>
-              </div>
-              <p className="text-gray-400">
-                Professional automotive services you can trust.
+      {/* Dynamic CTA */}
+      <section className="py-40 px-6">
+        <div className="max-w-7xl mx-auto premium-card !p-0 !rounded-[4rem] bg-slate-950 text-white border-none overflow-hidden relative">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            <div className="p-16 md:p-24 flex flex-col justify-center">
+              <h2 className="text-5xl md:text-7xl font-black mb-10 tracking-tighter uppercase leading-none">
+                REDEFINE <br />
+                <span className="text-blue-500 underline decoration-blue-500/30 underline-offset-[12px]">THE ENGINE</span>
+              </h2>
+              <p className="text-xl text-slate-400 mb-16 font-medium leading-relaxed max-w-sm">
+                Join our elite diagnostic network today. For vehicles that deserve more than just a repair.
               </p>
+              <div className="flex gap-6">
+                <Link to="/register" className="btn-primary !h-16 !px-12 !bg-white !text-slate-900">Get Started</Link>
+                <Link to="/about" className="flex items-center gap-4 text-xs font-black tracking-widest uppercase hover:text-blue-500 transition-colors">Our Protocol <ChevronRight className="w-5 h-5" /></Link>
+              </div>
+            </div>
+            <div className="relative h-[400px] lg:h-auto bg-blue-600 flex items-center justify-center overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-multiply opacity-40 scale-110 hover:scale-100 transition-transform duration-[20s]" />
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                className="w-32 h-32 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center cursor-pointer relative z-10"
+              >
+                <Zap className="w-10 h-10 text-white fill-white" />
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="pt-32 pb-20 border-t border-slate-100 dark:border-slate-900">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-20 mb-24">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="h-10 w-10 bg-slate-950 text-white rounded-xl flex items-center justify-center"><Wrench className="w-5 h-5" /></div>
+                <span className="text-2xl font-black tracking-tighter uppercase">PUEFIX <span className="text-blue-600">.</span></span>
+              </div>
+              <p className="text-slate-500 font-medium max-w-sm mb-10">Pioneering the intersection of mechanical integrity and digital intelligence. The ultimate workshop for the modern era.</p>
+              <div className="flex gap-4">
+                {[1, 2, 3, 4].map(i => <div key={i} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-blue-600 transition-colors cursor-pointer" />)}
+              </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Services</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>Engine Repair</li>
-                <li>Brake Service</li>
-                <li>Oil Change</li>
-                <li>Diagnostics</li>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-8 text-slate-400">Navigation</h4>
+              <ul className="space-y-4">
+                {['Protocol', 'Intelligence', 'Network', 'Support'].map(item => (
+                  <li key={item}><Link to="#" className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-widest">{item}</Link></li>
+                ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>About Us</li>
-                <li>Contact</li>
-                <li>Careers</li>
-                <li>Privacy Policy</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Contact</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>123 Auto Street</li>
-                <li>City, State 12345</li>
-                <li>(555) 123-4567</li>
-                <li>info@puefixgarage.com</li>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-8 text-slate-400">Security</h4>
+              <ul className="space-y-4">
+                {['Privacy', 'Legal', 'Governance', 'Cookies'].map(item => (
+                  <li key={item}><Link to="#" className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-widest">{item}</Link></li>
+                ))}
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 PUEFix Garage. All rights reserved.</p>
+          <div className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-slate-100 dark:border-slate-900 gap-8">
+            <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase italic">All Systems Operational // PUEFIX GLOBAL OPS</span>
+            <span className="text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase">© 2024 AUTO WORKSHOP MATRIX SYSTEM.</span>
           </div>
         </div>
       </footer>
@@ -328,3 +223,4 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+

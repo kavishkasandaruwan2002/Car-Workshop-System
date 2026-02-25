@@ -14,7 +14,9 @@ const initialState = {
   jobSheets: [],
   mechanics: [],
   inventory: [],
-  payments: []
+  payments: [],
+  invoices: [],
+  appointments: []
 };
 
 const appReducer = (state, action) => {
@@ -32,7 +34,7 @@ const appReducer = (state, action) => {
     case 'UPDATE_CAR':
       return {
         ...state,
-        cars: state.cars.map(car => 
+        cars: state.cars.map(car =>
           car.id === action.payload.id ? { ...car, ...action.payload } : car
         )
       };
@@ -49,7 +51,7 @@ const appReducer = (state, action) => {
     case 'UPDATE_REPAIR_HISTORY':
       return {
         ...state,
-        repairHistory: state.repairHistory.map(repair => 
+        repairHistory: state.repairHistory.map(repair =>
           repair.id === action.payload.id ? { ...repair, ...action.payload } : repair
         )
       };
@@ -71,7 +73,7 @@ const appReducer = (state, action) => {
     case 'UPDATE_JOB_SHEET':
       return {
         ...state,
-        jobSheets: state.jobSheets.map(job => 
+        jobSheets: state.jobSheets.map(job =>
           job.id === action.payload.id ? { ...job, ...action.payload } : job
         )
       };
@@ -93,7 +95,7 @@ const appReducer = (state, action) => {
     case 'UPDATE_MECHANIC':
       return {
         ...state,
-        mechanics: state.mechanics.map(mechanic => 
+        mechanics: state.mechanics.map(mechanic =>
           mechanic.id === action.payload.id ? { ...mechanic, ...action.payload } : mechanic
         )
       };
@@ -115,7 +117,7 @@ const appReducer = (state, action) => {
     case 'UPDATE_INVENTORY_ITEM':
       return {
         ...state,
-        inventory: state.inventory.map(item => 
+        inventory: state.inventory.map(item =>
           item.id === action.payload.id ? { ...item, ...action.payload } : item
         )
       };
@@ -137,7 +139,7 @@ const appReducer = (state, action) => {
     case 'UPDATE_PAYMENT':
       return {
         ...state,
-        payments: state.payments.map(payment => 
+        payments: state.payments.map(payment =>
           payment.id === action.payload.id ? { ...payment, ...action.payload } : payment
         )
       };
@@ -145,6 +147,26 @@ const appReducer = (state, action) => {
       return {
         ...state,
         payments: state.payments.filter(payment => payment.id !== action.payload)
+      };
+    case 'SET_INVOICES':
+      return {
+        ...state,
+        invoices: action.payload
+      };
+    case 'ADD_INVOICE':
+      return {
+        ...state,
+        invoices: [...state.invoices, action.payload]
+      };
+    case 'SET_APPOINTMENTS':
+      return {
+        ...state,
+        appointments: action.payload
+      };
+    case 'UPDATE_APPOINTMENT':
+      return {
+        ...state,
+        appointments: state.appointments.map(a => a.id === action.payload.id ? action.payload : a)
       };
     default:
       return state;

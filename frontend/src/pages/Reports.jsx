@@ -43,22 +43,22 @@ const Reports = () => {
     try { await downloadApiFile('/reports/cars', 'car-profiles-report.pdf'); }
     catch (e) { show(e?.message || 'Failed to download car profiles PDF', 'error'); }
   };
-  
+
   const downloadJobsReport = async () => {
     try { await downloadApiFile('/reports/jobs', 'job-sheet-report.pdf'); }
     catch (e) { show(e?.message || 'Failed to download job sheet PDF', 'error'); }
   };
-  
+
   const downloadInventoryReport = async () => {
     try { await downloadApiFile('/reports/inventory', 'inventory-report.pdf'); }
     catch (e) { show(e?.message || 'Failed to download inventory PDF', 'error'); }
   };
-  
+
   const downloadMechanicsReport = async () => {
     try { await downloadApiFile('/reports/mechanics', 'mechanics-report.pdf'); }
     catch (e) { show(e?.message || 'Failed to download mechanics PDF', 'error'); }
   };
-  
+
   const downloadPaymentsReport = async () => {
     try { await downloadApiFile('/reports/payments', 'payments-report.pdf'); }
     catch (e) { show(e?.message || 'Failed to download payments PDF', 'error'); }
@@ -159,11 +159,11 @@ const Reports = () => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    
+
     // Filter data based on date range
     let filteredJobs = state.jobSheets;
     let filteredPayments = state.payments;
-    
+
     if (dateRange === 'month') {
       filteredJobs = state.jobSheets.filter(job => {
         const jobDate = new Date(job.createdAt);
@@ -216,15 +216,24 @@ const Reports = () => {
 
     // Parts usage
     const partsUsage = state.inventory.map(item => {
-      const usedInJobs = state.repairHistory.filter(repair => 
-        repair.parts.includes(item.name)
-      ).length;
-      
+      let usedCount = 0;
+      state.jobSheets.forEach(job => {
+        if (job.partsUsed) {
+          job.partsUsed.forEach(pu => {
+            const partId = pu.part?._id || pu.part?.id || pu.part;
+            const itemId = item._id || item.id;
+            if (partId === itemId) {
+              usedCount += pu.quantity;
+            }
+          });
+        }
+      });
+
       return {
         name: item.name,
         category: item.category,
         quantity: item.quantity,
-        used: usedInJobs,
+        used: usedCount,
         value: item.quantity * item.price
       };
     });
@@ -251,7 +260,7 @@ const Reports = () => {
   }, {});
 
   const monthsOrder = [
-    'January','February','March','April','May','June','July','August','September','October','November','December'
+    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
   ];
   const chartData = monthsOrder.map((m) => ({ month: m, revenue: monthlyRevenueMap[m] || 0 }));
 
@@ -338,7 +347,7 @@ const Reports = () => {
           <option value="year">This Year</option>
           <option value="all">All Time</option>
         </select>
-        
+
         <select
           value={selectedMechanic}
           onChange={(e) => setSelectedMechanic(e.target.value)}
@@ -351,7 +360,7 @@ const Reports = () => {
             </option>
           ))}
         </select>
-        
+
         <div className="flex items-center text-sm text-gray-600">
           <Filter className="h-4 w-4 mr-2" />
           {reportData.filteredPayments.length} payments found
@@ -395,11 +404,10 @@ const Reports = () => {
               <button
                 key={tab.id}
                 onClick={() => setSelectedReport(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
-                  selectedReport === tab.id
+                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${selectedReport === tab.id
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <Icon className="h-4 w-4 mr-2" />
                 {tab.name}
@@ -473,7 +481,7 @@ const Reports = () => {
                 <Badge variant="outline" className="text-green-600 bg-green-500/10 border-none ml-2">
                   <TrendingUp className="h-4 w-4 mr-1" />
                   <span>
-                    {reportData.totalJobs > 0 ? `${Math.round((reportData.completedJobs / Math.max(reportData.totalJobs,1)) * 100)}%` : '—'}
+                    {reportData.totalJobs > 0 ? `${Math.round((reportData.completedJobs / Math.max(reportData.totalJobs, 1)) * 100)}%` : '—'}
                   </span>
                 </Badge>
               </CardTitle>
@@ -531,7 +539,7 @@ const Reports = () => {
                   {reportData.filteredPayments.map((payment) => {
                     const job = state.jobSheets.find(j => j.id === payment.jobSheetId);
                     const car = job ? state.cars.find(c => c.id === job.carId) : null;
-                    
+
                     return (
                       <tr key={payment.id} className="hover:bg-gray-50">
                         <td className="table-cell">
@@ -544,11 +552,10 @@ const Reports = () => {
                           {new Date(payment.date).toLocaleDateString()}
                         </td>
                         <td className="table-cell">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            payment.status === 'paid' 
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${payment.status === 'paid'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                            }`}>
                             {payment.status}
                           </span>
                         </td>
@@ -587,7 +594,7 @@ const Reports = () => {
       {selectedReport === 'mechanics' && (
         <div className="space-y-6">
           <h3 className="text-lg font-medium text-gray-900">Mechanic Performance</h3>
-          
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {reportData.mechanicStats.map((mechanic) => (
               <div key={mechanic.name} className="card">
@@ -595,7 +602,7 @@ const Reports = () => {
                   <h4 className="text-lg font-medium text-gray-900">{mechanic.name}</h4>
                   <span className="text-sm text-gray-500">{mechanic.efficiency.toFixed(1)}% efficiency</span>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Total Jobs:</span>
@@ -610,7 +617,7 @@ const Reports = () => {
                     <span className="font-medium text-green-600">${mechanic.revenue.toFixed(2)}</span>
                   </div>
                 </div>
-                
+
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
                     <span>Efficiency</span>
@@ -633,7 +640,7 @@ const Reports = () => {
       {selectedReport === 'inventory' && (
         <div className="space-y-6">
           <h3 className="text-lg font-medium text-gray-900">Parts Usage Analysis</h3>
-          
+
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -660,15 +667,14 @@ const Reports = () => {
                       <td className="table-cell">{part.used}</td>
                       <td className="table-cell font-medium">${part.value.toFixed(2)}</td>
                       <td className="table-cell">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          part.quantity === 0 
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${part.quantity === 0
                             ? 'bg-red-100 text-red-800'
                             : part.quantity <= 5
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {part.quantity === 0 ? 'Out of Stock' : 
-                           part.quantity <= 5 ? 'Low Stock' : 'In Stock'}
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                          {part.quantity === 0 ? 'Out of Stock' :
+                            part.quantity <= 5 ? 'Low Stock' : 'In Stock'}
                         </span>
                       </td>
                     </tr>
@@ -685,14 +691,14 @@ const Reports = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowPaymentModal(false)} />
-            
+
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <form onSubmit={handleSubmit}>
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
                     {editingPayment ? 'Edit Payment Record' : 'Add New Payment'}
                   </h3>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -716,7 +722,7 @@ const Reports = () => {
                         })}
                       </select>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -733,7 +739,7 @@ const Reports = () => {
                           className="input-field"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Date *
@@ -748,7 +754,7 @@ const Reports = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -765,7 +771,7 @@ const Reports = () => {
                           <option value="pending">Pending</option>
                         </select>
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Payment Method *
@@ -786,7 +792,7 @@ const Reports = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     type="submit"

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import { authenticate, authorize } from '../middleware/auth.js';
-import { listJobs, getJob, createJob, updateJob, deleteJob } from '../controllers/job.controller.js';
+import { listJobs, getJob, createJob, updateJob, deleteJob, addPartToJob, removePartFromJob } from '../controllers/job.controller.js';
 import { validate } from '../middleware/validate.js';
 
 const router = Router();
@@ -91,13 +91,13 @@ router.post('/', authorize(['owner', 'receptionist']), [
     .optional()
     .isMongoId()
     .withMessage('Car ID must be a valid MongoDB ObjectId'),
-  
+
   // Appointment validation - must be valid MongoDB ObjectId if provided
   body('appointment')
     .optional()
     .isMongoId()
     .withMessage('Appointment ID must be a valid MongoDB ObjectId'),
-  
+
   // Assigned mechanic validation - proper name format
   body('assignedMechanic')
     .optional()
@@ -108,13 +108,13 @@ router.post('/', authorize(['owner', 'receptionist']), [
     .withMessage('Assigned mechanic must be 2-50 characters')
     .matches(/^[a-zA-Z\s\-'\.]+$/)
     .withMessage('Assigned mechanic can only contain letters, spaces, hyphens, apostrophes, and periods'),
-  
+
   // Tasks array validation
   body('tasks')
     .optional()
     .isArray({ min: 0, max: 20 })
     .withMessage('Tasks must be an array with 0-20 items'),
-  
+
   // Individual task validation
   body('tasks.*.description')
     .optional()
@@ -125,12 +125,12 @@ router.post('/', authorize(['owner', 'receptionist']), [
     .withMessage('Task description must be 1-500 characters')
     .matches(/^[a-zA-Z0-9\s\-.,!?()&@#$%^+=:;'"<>[\]{}|\\/`~]*$/)
     .withMessage('Task description contains invalid characters'),
-  
+
   body('tasks.*.completed')
     .optional()
     .isBoolean()
     .withMessage('Task completed status must be true or false'),
-  
+
   // Estimated completion date validation
   body('estimatedCompletion')
     .optional()
@@ -143,7 +143,7 @@ router.post('/', authorize(['owner', 'receptionist']), [
         // Allow dates up to 1 year in the future
         const oneYearFromNow = new Date();
         oneYearFromNow.setFullYear(now.getFullYear() + 1);
-        
+
         if (date <= now) {
           throw new Error('Estimated completion date must be in the future');
         }
@@ -188,13 +188,13 @@ router.post('/', authorize(['owner', 'receptionist']), [
  */
 router.put('/:id', [
   param('id').isMongoId().withMessage('Invalid job ID format'),
-  
+
   // Car validation - must be valid MongoDB ObjectId if provided
   body('car')
     .optional()
     .isMongoId()
     .withMessage('Car ID must be a valid MongoDB ObjectId'),
-  
+
   // Assigned mechanic validation - proper name format
   body('assignedMechanic')
     .optional()
@@ -205,13 +205,13 @@ router.put('/:id', [
     .withMessage('Assigned mechanic must be 2-50 characters')
     .matches(/^[a-zA-Z\s\-'\.]+$/)
     .withMessage('Assigned mechanic can only contain letters, spaces, hyphens, apostrophes, and periods'),
-  
+
   // Tasks array validation
   body('tasks')
     .optional()
     .isArray({ min: 0, max: 20 })
     .withMessage('Tasks must be an array with 0-20 items'),
-  
+
   // Individual task validation
   body('tasks.*.description')
     .optional()
@@ -222,12 +222,12 @@ router.put('/:id', [
     .withMessage('Task description must be 1-500 characters')
     .matches(/^[a-zA-Z0-9\s\-.,!?()&@#$%^+=:;'"<>[\]{}|\\/`~]*$/)
     .withMessage('Task description contains invalid characters'),
-  
+
   body('tasks.*.completed')
     .optional()
     .isBoolean()
     .withMessage('Task completed status must be true or false'),
-  
+
   // Estimated completion date validation
   body('estimatedCompletion')
     .optional()
@@ -240,7 +240,7 @@ router.put('/:id', [
         // Allow dates up to 1 year in the future
         const oneYearFromNow = new Date();
         oneYearFromNow.setFullYear(now.getFullYear() + 1);
-        
+
         if (date <= now) {
           throw new Error('Estimated completion date must be in the future');
         }
@@ -250,7 +250,7 @@ router.put('/:id', [
       }
       return true;
     }),
-  
+
   // Status validation - must be one of the allowed enum values
   body('status')
     .optional()
@@ -285,7 +285,7 @@ router.put('/:id', [
 router.delete('/:id', [
   param('id').isMongoId().withMessage('Invalid job ID format')
 ], validate, authorize(['owner', 'receptionist']), deleteJob);
+router.post('/:jobId/parts', authorize(['owner', 'receptionist']), addPartToJob);
+router.delete('/:jobId/parts/:partIndex', authorize(['owner', 'receptionist']), removePartFromJob);
 
 export default router;
-
-

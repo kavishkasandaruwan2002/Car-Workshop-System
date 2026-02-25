@@ -35,5 +35,5 @@ export function authorize(allowedRoles = []) {
     next();
   };
 }
-
-
+export const protect = authenticate;
+export const restrictTo = (...roles) => authorize(roles);

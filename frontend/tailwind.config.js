@@ -44,7 +44,19 @@ module.exports = {
           700: '#334155',
           800: '#1e293b',
           900: '#0f172a',
-        }
+        },
+        'workshop-blue': '#2563eb',
+        'workshop-indigo': '#4f46e5',
+        'workshop-slate': '#0f172a',
+        'workshop-emerald': '#10b981',
+        'workshop-amber': '#f59e0b',
+        'workshop-rose': '#f43f5e',
+      },
+      boxShadow: {
+        'premium': '0 30px 60px -15px rgba(0, 0, 0, 0.2)',
+      },
+      borderRadius: {
+        '2xl': 'var(--radius)',
       }
     },
   },

@@ -13,7 +13,6 @@ import {
   Mail,
   MessageSquare,
   AlertCircle,
-  type LucideIcon,
 } from "lucide-react";
 
 interface Notification {
@@ -23,7 +22,7 @@ interface Notification {
   target: string;
   timestamp: string;
   unread: boolean;
-  icon: LucideIcon;
+  icon: any;
 }
 
 const initialNotifications: Notification[] = [
@@ -152,9 +151,8 @@ function NotificationInboxPopover() {
                     </div>
                     <div className="flex-1 space-y-1">
                       <p
-                        className={`text-sm ${
-                          n.unread ? "font-semibold text-foreground" : "text-foreground/80"
-                        }`}
+                        className={`text-sm ${n.unread ? "font-semibold text-foreground" : "text-foreground/80"
+                          }`}
                       >
                         {n.user} {n.action}{" "}
                         <span className="font-medium">{n.target}</span>

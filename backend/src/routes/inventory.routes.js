@@ -14,17 +14,18 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { authenticate, authorize } from '../middleware/auth.js';
-import { 
-  listInventory, 
-  getInventoryItem, 
-  createInventoryItem, 
-  updateInventoryItem, 
+import {
+  listInventory,
+  getInventoryItem,
+  createInventoryItem,
+  updateInventoryItem,
   deleteInventoryItem,
   getLowStockItems,
   getReorderSuggestions,
   getInventoryAnalytics,
   reduceStock,
   bulkReduceStock,
+  increaseStock,
   getStockMovements
 } from '../controllers/inventory.controller.js';
 import { validate } from '../middleware/validate.js';
@@ -67,6 +68,14 @@ router.put('/:id/reduce', authorize(['owner', 'receptionist']), [
   body('jobId').optional().isString(),
   body('notes').optional().isString()
 ], validate, reduceStock);
+
+// PUT /inventory/:id/increase - Increase stock for a specific item
+// Access: owner, receptionist (inventory management)
+router.put('/:id/increase', authorize(['owner', 'receptionist']), [
+  body('quantity').isNumeric().isFloat({ min: 0.01 }),
+  body('reason').optional().isString(),
+  body('notes').optional().isString()
+], validate, increaseStock);
 
 // POST /inventory/bulk-reduce - Reduce stock for multiple items
 // Access: owner, receptionist (bulk operations)

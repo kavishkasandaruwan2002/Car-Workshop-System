@@ -36,18 +36,16 @@ export function ThemeSwitch({ className = '' }: ThemeSwitchProps) {
       title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
     >
       <Sun
-        className={`absolute h-5 w-5 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          theme === 'light' 
-            ? 'scale-100 translate-y-0 opacity-100' 
+        className={`absolute h-5 w-5 transition-all duration-300 ease-out ${theme === 'light'
+            ? 'scale-100 translate-y-0 opacity-100'
             : 'scale-50 translate-y-5 opacity-0'
-        }`}
+          }`}
       />
       <Moon
-        className={`absolute h-5 w-5 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          theme === 'dark' 
-            ? 'scale-100 translate-y-0 opacity-100' 
+        className={`absolute h-5 w-5 transition-all duration-300 ease-out ${theme === 'dark'
+            ? 'scale-100 translate-y-0 opacity-100'
             : 'scale-50 translate-y-5 opacity-0'
-        }`}
+          }`}
       />
     </button>
   )
