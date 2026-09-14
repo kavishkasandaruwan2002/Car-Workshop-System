@@ -290,10 +290,10 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full py-3 text.sm mt-2"
+                className="btn-primary w-full py-3 text-sm mt-2"
               >
                 {loading ? (
-                  <span className="flex items-center">
+                  <span className="flex items-center justify-center">
                     <span className="spinner mr-2" /> Signing in...
                   </span>
                 ) : (

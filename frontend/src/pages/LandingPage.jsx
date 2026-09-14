@@ -21,7 +21,8 @@ import {
   Award,
   ChevronRight,
   PhoneCall,
-  Activity
+  Activity,
+  ArrowUpRight
 } from 'lucide-react';
 
 const testimonials = [

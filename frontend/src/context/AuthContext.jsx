@@ -99,15 +99,23 @@ export const AuthProvider = ({ children }) => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: JSON.parse(savedUser)
-      });
-    } else {
-      // For development: automatically login with a mock user if no user exists
-      if (import.meta.env.DEV) {
+    try {
+      const savedUser = localStorage.getItem('user');
+      const savedToken = localStorage.getItem('token');
+
+      if (savedUser && savedUser !== 'undefined' && savedUser !== 'null') {
+        const user = JSON.parse(savedUser);
+        if (user && typeof user === 'object') {
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: user
+          });
+          return;
+        }
+      }
+
+      // For development: automatically login with a mock user if no user exists and no token
+      if (import.meta.env.DEV && !savedToken) {
         const mockUser = {
           id: '1',
           name: 'Test Owner',
@@ -124,6 +132,11 @@ export const AuthProvider = ({ children }) => {
       } else {
         dispatch({ type: 'LOGOUT' });
       }
+    } catch (error) {
+      console.error('Failed to restore session:', error);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      dispatch({ type: 'LOGOUT' });
     }
   }, []);
 

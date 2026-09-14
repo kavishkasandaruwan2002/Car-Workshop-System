@@ -27,19 +27,19 @@ export async function listInventory(req, res, next) {
   try {
     // Extract query parameters with defaults
     const { page = 1, limit = 10, search = '' } = req.query;
-    
+
     // Build search query - if search term provided, create regex for case-insensitive search
     const query = search ? { name: { $regex: search, $options: 'i' } } : {};
-    
+
     // Execute database query with pagination and sorting
     const results = await InventoryItem.find(query)
       .skip((Number(page) - 1) * Number(limit))    // Skip items for pagination
       .limit(Number(limit))                        // Limit results per page
       .sort({ createdAt: -1 });                    // Sort by creation date (newest first)
-    
+
     // Get total count for pagination metadata
     const total = await InventoryItem.countDocuments(query);
-    
+
     // Return paginated response with transformed data (_id -> id)
     res.json({ success: true, data: mapArrayId(results), page: Number(page), limit: Number(limit), total });
   } catch (err) { next(err); }  // Pass error to error handling middleware
@@ -55,10 +55,10 @@ export async function getInventoryItem(req, res, next) {
   try {
     // Find item by ID from URL parameters
     const item = await InventoryItem.findById(req.params.id);
-    
+
     // Return 404 if item doesn't exist
     if (!item) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: 'Not found' });
-    
+
     // Return item with transformed ID
     res.json({ success: true, data: mapId(item) });
   } catch (err) { next(err); }
@@ -76,16 +76,27 @@ export async function createInventoryItem(req, res, next) {
   try {
     // Copy request body to avoid mutating original
     const body = { ...req.body };
-    
+
     // DATA TYPE CONVERSION - Convert string inputs to numbers
     body.quantity = Number(body.quantity || 0);        // Current stock quantity
     body.price = Number(body.price || 0);              // Unit price
     body.minThreshold = Number(body.minThreshold || 0); // Minimum stock alert level
     body.lastUpdated = new Date();                     // Set current timestamp
-    
+
+    // Check for duplicate SKU if provided
+    if (body.sku) {
+      const existingItem = await InventoryItem.findOne({ sku: body.sku });
+      if (existingItem) {
+        return res.status(StatusCodes.CONFLICT).json({
+          success: false,
+          message: 'An item with this SKU already exists'
+        });
+      }
+    }
+
     // Save to database
     const item = await InventoryItem.create(body);
-    
+
     // Return created item with 201 status and transformed ID
     res.status(StatusCodes.CREATED).json({ success: true, data: mapId(item) });
   } catch (err) { next(err); }
@@ -102,19 +113,37 @@ export async function updateInventoryItem(req, res, next) {
   try {
     // Copy request body to avoid mutating original
     const body = { ...req.body };
-    
+
     // SELECTIVE TYPE CONVERSION - Only convert if field is provided
     if (body.quantity !== undefined) body.quantity = Number(body.quantity);
     if (body.price !== undefined) body.price = Number(body.price);
     if (body.minThreshold !== undefined) body.minThreshold = Number(body.minThreshold);
     body.lastUpdated = new Date();  // Always update timestamp on any change
-    
-    // Find and update item, return updated document
-    const item = await InventoryItem.findByIdAndUpdate(req.params.id, body, { new: true });
-    
+
+    // Check for duplicate SKU if it's being updated
+    if (body.sku) {
+      const existingItem = await InventoryItem.findOne({
+        sku: body.sku,
+        _id: { $ne: req.params.id }
+      });
+      if (existingItem) {
+        return res.status(StatusCodes.CONFLICT).json({
+          success: false,
+          message: 'An item with this SKU already exists'
+        });
+      }
+    }
+
+    // Find and update item, return updated document with validation
+    const item = await InventoryItem.findByIdAndUpdate(
+      req.params.id,
+      body,
+      { new: true, runValidators: true }
+    );
+
     // Return 404 if item doesn't exist
     if (!item) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: 'Not found' });
-    
+
     // Return updated item with transformed ID
     res.json({ success: true, data: mapId(item) });
   } catch (err) { next(err); }
@@ -131,10 +160,10 @@ export async function deleteInventoryItem(req, res, next) {
   try {
     // Find and delete item in single operation
     const item = await InventoryItem.findByIdAndDelete(req.params.id);
-    
+
     // Return 404 if item doesn't exist
     if (!item) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: 'Not found' });
-    
+
     // Return success confirmation
     res.json({ success: true, message: 'Deleted' });
   } catch (err) { next(err); }
@@ -153,9 +182,9 @@ export async function deleteInventoryItem(req, res, next) {
 export async function getLowStockItems(req, res, next) {
   try {
     const { critical = false, limit = 50 } = req.query;
-    
+
     let query = {};
-    
+
     if (critical) {
       // Only out of stock items (quantity = 0)
       query = { quantity: 0 };
@@ -163,11 +192,11 @@ export async function getLowStockItems(req, res, next) {
       // Low stock items (quantity <= minThreshold)
       query = { $expr: { $lte: ['$quantity', '$minThreshold'] } };
     }
-    
+
     const items = await InventoryItem.find(query)
       .limit(Number(limit))
       .sort({ quantity: 1, name: 1 }); // Sort by quantity (lowest first), then by name
-    
+
     // Add calculated fields for frontend
     const itemsWithStatus = items.map(item => {
       const itemObj = item.toObject();
@@ -176,9 +205,9 @@ export async function getLowStockItems(req, res, next) {
       itemObj.suggestedReorderQty = Math.max(itemObj.minThreshold * 2, 10);
       return itemObj;
     });
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       data: mapArrayId(itemsWithStatus),
       count: itemsWithStatus.length,
       critical: critical === 'true'
@@ -199,40 +228,51 @@ export async function getLowStockItems(req, res, next) {
 export async function getReorderSuggestions(req, res, next) {
   try {
     const { minValue = 0, maxItems = 20 } = req.query;
-    
+
     // Find items that need reordering (low stock or out of stock)
     const items = await InventoryItem.find({
       $expr: { $lte: ['$quantity', '$minThreshold'] }
     }).sort({ quantity: 1, name: 1 });
-    
+
     // Generate reorder suggestions with intelligent quantities
     const suggestions = items.map(item => {
       const itemObj = item.toObject();
-      
-      // Calculate suggested reorder quantity
+      const supplierInfo = itemObj.supplierInfo || {};
+      const leadTime = supplierInfo.leadTime || 7;
+      const minimumOrder = supplierInfo.minimumOrder || 0;
+
+      // Calculate suggested reorder quantity based on threshold and lead time
+      // Higher lead time means we should order more to avoid running out
+      const leadTimeFactor = Math.max(1, leadTime / 7);
+
       let suggestedQty = 0;
       if (itemObj.quantity === 0) {
-        // Critical: out of stock - suggest 3x minimum threshold
-        suggestedQty = Math.max(itemObj.minThreshold * 3, 20);
-      } else if (itemObj.quantity <= itemObj.minThreshold) {
-        // Low stock - suggest 2x minimum threshold
-        suggestedQty = Math.max(itemObj.minThreshold * 2, 10);
+        // Critical: out of stock
+        suggestedQty = Math.round(Math.max(itemObj.minThreshold * 3 * leadTimeFactor, 20));
+      } else {
+        // Low stock
+        suggestedQty = Math.round(Math.max(itemObj.minThreshold * 2 * leadTimeFactor, 10));
       }
-      
+
+      // Respect minimum order quantity from supplier
+      suggestedQty = Math.max(suggestedQty, minimumOrder);
+
       const totalCost = suggestedQty * itemObj.price;
-      
+
       return {
         ...mapId(itemObj),
         suggestedReorderQty: suggestedQty,
         estimatedCost: totalCost,
         priority: itemObj.quantity === 0 ? 'critical' : 'high',
-        stockStatus: itemObj.quantity === 0 ? 'out' : 'low'
+        stockStatus: itemObj.quantity === 0 ? 'out' : 'low',
+        leadTime,
+        minimumOrder
       };
     });
-    
+
     // Filter by minimum value if specified
     const filteredSuggestions = suggestions.filter(s => s.estimatedCost >= Number(minValue));
-    
+
     // Sort by priority (critical first) and cost (highest first)
     const sortedSuggestions = filteredSuggestions
       .sort((a, b) => {
@@ -241,9 +281,9 @@ export async function getReorderSuggestions(req, res, next) {
         return b.estimatedCost - a.estimatedCost;
       })
       .slice(0, Number(maxItems));
-    
+
     const totalEstimatedCost = sortedSuggestions.reduce((sum, item) => sum + item.estimatedCost, 0);
-    
+
     res.json({
       success: true,
       data: sortedSuggestions,
@@ -272,79 +312,104 @@ export async function getReorderSuggestions(req, res, next) {
 export async function reduceStock(req, res, next) {
   try {
     const { quantity, reason = 'adjustment', jobId, notes } = req.body;
-    
+
     // Validate required fields
     if (!quantity || quantity <= 0) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ 
-        success: false, 
-        message: 'Quantity must be a positive number' 
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Quantity must be a positive number'
       });
     }
-    
+
     // Find the item
     const item = await InventoryItem.findById(req.params.id);
     if (!item) {
-      return res.status(StatusCodes.NOT_FOUND).json({ 
-        success: false, 
-        message: 'Item not found' 
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Item not found'
       });
     }
-    
+
     // Check if there's enough stock
     if (item.quantity < quantity) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ 
-        success: false, 
-        message: `Insufficient stock. Available: ${item.quantity}, Requested: ${quantity}` 
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: `Insufficient stock. Available: ${item.quantity}, Requested: ${quantity}`
       });
     }
-    
+
     // Calculate new quantity
     const newQuantity = item.quantity - quantity;
-    
+
     // Update the item
     const updatedItem = await InventoryItem.findByIdAndUpdate(
       req.params.id,
-      { 
+      {
         quantity: newQuantity,
         lastUpdated: new Date()
       },
       { new: true }
     );
-    
-    // Create stock movement record (optional - for audit trail)
-    const stockMovement = {
-      itemId: item._id,
-      itemName: item.name,
-      movementType: 'reduction',
-      quantity: -quantity, // Negative for reduction
-      reason: reason,
-      jobId: jobId,
-      notes: notes,
-      previousQuantity: item.quantity,
-      newQuantity: newQuantity,
-      timestamp: new Date()
-    };
-    
-    // Log the stock movement (you could save this to a separate collection)
-    console.log('Stock Movement:', stockMovement);
-    
-    // Return updated item with stock status
-    const itemWithStatus = {
-      ...updatedItem.toObject(),
-      stockStatus: newQuantity === 0 ? 'out' : newQuantity <= item.minThreshold ? 'low' : 'good',
-      previousQuantity: item.quantity,
-      reductionAmount: quantity,
-      reason: reason
-    };
-    
-    res.json({ 
-      success: true, 
-      data: mapId(itemWithStatus),
-      message: `Stock reduced by ${quantity} units. New quantity: ${newQuantity}`,
-      stockMovement: stockMovement
+
+    // Return updated item with transformed ID
+    res.json({
+      success: true,
+      data: mapId(updatedItem),
+      message: `Stock reduced by ${quantity} units. New quantity: ${newQuantity}`
     });
-  } catch (err) { 
-    next(err); 
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * INCREASE STOCK QUANTITY - PUT /inventory/:id/increase
+ * 
+ * Increases stock quantity for a specific item.
+ * This is used when new stock is received, returns are processed, or adjustments are needed.
+ */
+export async function increaseStock(req, res, next) {
+  try {
+    const { quantity, reason = 'restock', notes } = req.body;
+
+    // Validate required fields
+    if (!quantity || quantity <= 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Quantity must be a positive number'
+      });
+    }
+
+    // Find the item
+    const item = await InventoryItem.findById(req.params.id);
+    if (!item) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Item not found'
+      });
+    }
+
+    // Calculate new quantity
+    const newQuantity = item.quantity + Number(quantity);
+
+    // Update the item
+    const updatedItem = await InventoryItem.findByIdAndUpdate(
+      req.params.id,
+      {
+        quantity: newQuantity,
+        lastUpdated: new Date()
+      },
+      { new: true }
+    );
+
+    // Return updated item with transformed ID
+    res.json({
+      success: true,
+      data: mapId(updatedItem),
+      message: `Stock increased by ${quantity} units. New quantity: ${newQuantity}`
+    });
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -360,50 +425,50 @@ export async function reduceStock(req, res, next) {
 export async function bulkReduceStock(req, res, next) {
   try {
     const { items, jobId, reason = 'bulk_adjustment', notes } = req.body;
-    
+
     if (!Array.isArray(items) || items.length === 0) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ 
-        success: false, 
-        message: 'Items array is required' 
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Items array is required'
       });
     }
-    
+
     const results = [];
     const errors = [];
-    
+
     // Process each item
     for (const itemData of items) {
       try {
         const { itemId, quantity, itemReason = reason, itemNotes = notes } = itemData;
-        
+
         // Find the item
         const item = await InventoryItem.findById(itemId);
         if (!item) {
           errors.push({ itemId, error: 'Item not found' });
           continue;
         }
-        
+
         // Check stock availability
         if (item.quantity < quantity) {
-          errors.push({ 
-            itemId, 
+          errors.push({
+            itemId,
             itemName: item.name,
-            error: `Insufficient stock. Available: ${item.quantity}, Requested: ${quantity}` 
+            error: `Insufficient stock. Available: ${item.quantity}, Requested: ${quantity}`
           });
           continue;
         }
-        
+
         // Reduce stock
         const newQuantity = item.quantity - quantity;
         const updatedItem = await InventoryItem.findByIdAndUpdate(
           itemId,
-          { 
+          {
             quantity: newQuantity,
             lastUpdated: new Date()
           },
           { new: true }
         );
-        
+
         results.push({
           itemId,
           itemName: item.name,
@@ -413,15 +478,15 @@ export async function bulkReduceStock(req, res, next) {
           stockStatus: newQuantity === 0 ? 'out' : newQuantity <= item.minThreshold ? 'low' : 'good',
           reason: itemReason
         });
-        
+
       } catch (itemError) {
-        errors.push({ 
-          itemId: itemData.itemId, 
-          error: itemError.message 
+        errors.push({
+          itemId: itemData.itemId,
+          error: itemError.message
         });
       }
     }
-    
+
     res.json({
       success: true,
       data: {
@@ -432,8 +497,8 @@ export async function bulkReduceStock(req, res, next) {
       },
       message: `Processed ${results.length} items successfully, ${errors.length} errors`
     });
-  } catch (err) { 
-    next(err); 
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -446,7 +511,7 @@ export async function bulkReduceStock(req, res, next) {
 export async function getStockMovements(req, res, next) {
   try {
     const { page = 1, limit = 20 } = req.query;
-    
+
     // In a real implementation, you'd have a StockMovement collection
     // For now, we'll return a placeholder response
     res.json({
@@ -457,8 +522,8 @@ export async function getStockMovements(req, res, next) {
         message: 'Stock movement tracking not yet implemented'
       }
     });
-  } catch (err) { 
-    next(err); 
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -472,28 +537,28 @@ export async function getInventoryAnalytics(req, res, next) {
   try {
     // Get all inventory items
     const allItems = await InventoryItem.find({});
-    
+
     // Calculate analytics
     const totalItems = allItems.length;
     const outOfStockItems = allItems.filter(item => item.quantity === 0);
-    const lowStockItems = allItems.filter(item => 
+    const lowStockItems = allItems.filter(item =>
       item.quantity > 0 && item.quantity <= item.minThreshold
     );
     const inStockItems = allItems.filter(item => item.quantity > item.minThreshold);
-    
+
     // Financial calculations
-    const totalInventoryValue = allItems.reduce((sum, item) => 
+    const totalInventoryValue = allItems.reduce((sum, item) =>
       sum + (item.quantity * item.price), 0
     );
-    
-    const lowStockValue = lowStockItems.reduce((sum, item) => 
+
+    const lowStockValue = lowStockItems.reduce((sum, item) =>
       sum + (item.quantity * item.price), 0
     );
-    
-    const outOfStockValue = outOfStockItems.reduce((sum, item) => 
+
+    const outOfStockValue = outOfStockItems.reduce((sum, item) =>
       sum + (item.minThreshold * item.price), 0
     );
-    
+
     // Category breakdown
     const categoryBreakdown = {};
     allItems.forEach(item => {
@@ -511,7 +576,7 @@ export async function getInventoryAnalytics(req, res, next) {
       else if (item.quantity <= item.minThreshold) categoryBreakdown[category].lowStock++;
       categoryBreakdown[category].value += item.quantity * item.price;
     });
-    
+
     // Top suppliers by value
     const supplierBreakdown = {};
     allItems.forEach(item => {
@@ -529,12 +594,12 @@ export async function getInventoryAnalytics(req, res, next) {
         supplierBreakdown[supplier].lowStockItems++;
       }
     });
-    
+
     const topSuppliers = Object.entries(supplierBreakdown)
       .map(([supplier, data]) => ({ supplier, ...data }))
       .sort((a, b) => b.totalValue - a.totalValue)
       .slice(0, 5);
-    
+
     res.json({
       success: true,
       data: {

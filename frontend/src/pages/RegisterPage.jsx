@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Monitor, CheckCircle, Laptop, Cpu, Wifi, Settings, Wrench } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Monitor, CheckCircle, Smartphone, Globe, ShieldCheck, AlertCircle, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import PageTransition from '@/components/ui/PageTransition';
@@ -34,31 +34,18 @@ const RegisterPage = () => {
       .trim()
       .min(2, 'Name must be at least 2 characters')
       .max(50, 'Name must not exceed 50 characters')
-      .matches(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces')
       .required('Name is required'),
     email: Yup.string()
       .trim()
       .email('Please enter a valid email address')
-      .max(100, 'Email must not exceed 100 characters')
       .required('Email is required'),
     password: Yup.string()
       .min(8, 'Password must be at least 8 characters')
       .max(50, 'Password must not exceed 50 characters')
-      .matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        'Password must contain uppercase, lowercase, number, and special character'
-      )
       .required('Password is required'),
     confirmPassword: Yup.string()
       .oneOf([Yup.ref('password'), null], 'Passwords must match')
       .required('Please confirm your password'),
-    carMake: Yup.string().trim().max(50, 'Make must not exceed 50 characters').optional(),
-    carModel: Yup.string().trim().max(50, 'Model must not exceed 50 characters').optional(),
-    carYear: Yup.string().matches(/^\d{4}$/,'Enter a valid year').optional(),
-    licensePlate: Yup.string().trim().max(20,'License plate too long').optional(),
-    vin: Yup.string().trim().max(30,'VIN too long').optional(),
-    terms: Yup.boolean()
-      .oneOf([true], 'You must accept the terms and conditions')
   });
 
   const validateField = async (fieldName, value) => {
@@ -77,15 +64,11 @@ const RegisterPage = () => {
     }
   };
 
-  const handleChange = async (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (touched[name]) {
-      await validateField(name, value);
+      validateField(name, value);
     }
   };
 
@@ -99,31 +82,15 @@ const RegisterPage = () => {
     await validateField(name, value);
   };
 
-  const passwordStrength = () => {
-    if (!formData.password) return 0;
-    let strength = 0;
-    if (formData.password.length >= 8) strength++;
-    if (formData.password.length >= 12) strength++;
-    if (formData.password.match(/[a-z]/) && formData.password.match(/[A-Z]/)) strength++;
-    if (formData.password.match(/[0-9]/)) strength++;
-    if (formData.password.match(/[^a-zA-Z0-9]/)) strength++;
-    return Math.min(strength, 4);
-  };
-
-  const features = [
-    'Create and manage your vehicle profile',
-    'Track repair status with live digital job sheets',
-    'Book online service & maintenance appointments',
-    'Access instant billing history and invoices'
-  ];
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setTouched({ name: true, email: true, password: true, confirmPassword: true, terms: true });
+    if (!agreedToTerms) {
+      show('Please agree to the terms and conditions', 'error');
+      return;
+    }
+    setLoading(true);
     try {
-      await validationSchema.validate({ ...formData, terms: agreedToTerms }, { abortEarly: false });
-      setErrors({});
-      setLoading(true);
+      await validationSchema.validate(formData, { abortEarly: false });
       const result = await register({ name: formData.name, email: formData.email, password: formData.password, role: 'customer' });
       if (result?.success) {
         show('Account created successfully! Welcome to PUEFix Garage.', 'success');
@@ -154,7 +121,7 @@ const RegisterPage = () => {
           navigate('/', { replace: true });
         }
       } else {
-        show(result?.error || 'Registration failed. Please try again.', 'error');
+        show(result?.error || 'Registration failed', 'error');
       }
     } catch (error) {
       if (error.inner) {
@@ -162,14 +129,19 @@ const RegisterPage = () => {
         error.inner.forEach(err => { newErrors[err.path] = err.message; });
         setErrors(newErrors);
       } else {
-        const errorMessage = error.message || 'Registration failed. Please try again.';
-        setErrors({ submit: errorMessage });
-        show(errorMessage, 'error');
+        show(error.message || 'Registration failed', 'error');
       }
     } finally {
       setLoading(false);
     }
   };
+
+  const features = [
+    'Create and manage your vehicle profile',
+    'Track repair status with live digital job sheets',
+    'Book online service & maintenance appointments',
+    'Access instant billing history and invoices'
+  ];
 
   return (
     <PageTransition className="min-h-screen flex bg-slate-950 text-slate-100 overflow-hidden relative">
@@ -302,7 +274,6 @@ const RegisterPage = () => {
                 <input type="checkbox" id="terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500 h-4 w-4" />
                 <label htmlFor="terms" className="text-xs text-slate-300">I agree to Terms and Conditions</label>
               </div>
-              {errors.terms && touched.terms && <p className="text-xs text-rose-400">{errors.terms}</p>}
 
               <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-sm mt-2">
                 {loading ? 'Creating Account...' : 'Create Account'}

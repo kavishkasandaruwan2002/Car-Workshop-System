@@ -10,6 +10,7 @@ import {
   Car,
   Wrench,
   Package,
+  FileText,
   Users,
   BarChart3,
   Menu,
@@ -18,8 +19,7 @@ import {
   LogOut,
   Settings,
   Sparkles,
-  ChevronRight,
-  ShieldAlert
+  ChevronRight
 } from 'lucide-react';
 
 const Layout = () => {
@@ -32,14 +32,15 @@ const Layout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['owner', 'receptionist'] },
-    { name: 'Car Profiles', href: '/dashboard/cars', icon: Car, roles: ['owner', 'receptionist'] },
+    { name: 'Cars', href: '/dashboard/cars', icon: Car, roles: ['owner', 'receptionist'] },
     { name: 'Job Sheets', href: '/dashboard/jobs', icon: Wrench, roles: ['owner', 'receptionist'] },
     { name: 'Inventory', href: '/dashboard/inventory', icon: Package, roles: ['owner'] },
+    { name: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['owner', 'receptionist'] },
     { name: 'Mechanics', href: '/dashboard/mechanics', icon: Users, roles: ['owner'] },
     { name: 'Reports', href: '/dashboard/reports', icon: BarChart3, roles: ['owner', 'receptionist'] },
   ];
 
-  const filteredNavigation = navigation.filter(item => 
+  const filteredNavigation = navigation.filter(item =>
     item.roles.includes(user?.role)
   );
 
@@ -152,7 +153,7 @@ const Layout = () => {
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <Icon className={`mr-3.5 h-4 5 w-4.5 transition-colors ${active ? 'text-white' : 'text-slate-400 group-hover:text-blue-600 dark:group-hover:text-cyan-400'}`} />
+                  <Icon className={`mr-3.5 h-4.5 w-4.5 transition-colors ${active ? 'text-white' : 'text-slate-400 group-hover:text-blue-600 dark:group-hover:text-cyan-400'}`} />
                   <span className="flex-1">{item.name}</span>
                   {active && (
                     <motion.div 

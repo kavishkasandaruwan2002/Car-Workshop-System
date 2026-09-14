@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { buildReportHTML, openPrint } from '../utils/report';
@@ -29,7 +29,7 @@ import { useToast } from '../components/Toast';
 import { getUsers, updateUser as updateUserApi, deleteUser as deleteUserApi, createUser, resetMechanicPasswordByNIC } from '../api/users';
 
 const Dashboard = () => {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const { show } = useToast();
@@ -59,43 +59,59 @@ const Dashboard = () => {
   useEffect(() => {
     (async () => {
       try {
-        const resp = await apiRequest('/appointments');
-        const allAppointments = resp.data || [];
+        const [apptsResp, invResp] = await Promise.all([
+          apiRequest('/appointments').catch(() => ({ data: [] })),
+          apiRequest('/invoices').catch(() => ({ data: [] }))
+        ]);
+        const allAppointments = apptsResp.data || [];
         const upcomingAppointments = allAppointments
           .filter(a => new Date(a.preferredDate) >= new Date())
           .sort((a, b) => new Date(a.preferredDate) - new Date(b.preferredDate));
         setAppointments(upcomingAppointments);
+        if (invResp.data && dispatch) {
+          dispatch({ type: 'SET_INVOICES', payload: invResp.data });
+        }
       } catch (e) {
         console.error('Failed to load appointments:', e);
       }
     })();
-  }, []);
+  }, [dispatch]);
 
-  useEffect(() => {
-    if (state?.user?.role === 'owner') {
-      fetchCustomers();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customerSearch]);
-
-  useEffect(() => {
-    if (state?.user?.role === 'owner') {
-      fetchReceptionists();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receptionistSearch]);
-
-  async function fetchCustomers() {
+  const fetchCustomers = useCallback(async () => {
     try {
       setCustomersLoading(true);
       const resp = await getUsers({ search: customerSearch, role: 'customer', limit: 100 });
       setCustomers(resp?.data || []);
     } catch (err) {
       show('Failed to load customers', 'error');
-    } finally {
+    } fontally: {
       setCustomersLoading(false);
     }
-  }
+  }, [customerSearch, show]);
+
+  const fetchReceptionists = useCallback(async () => {
+    try {
+      setReceptionistsLoading(true);
+      const resp = await getUsers({ search: receptionistSearch, role: 'receptionist', limit: 100 });
+      setReceptionists(resp?.data || []);
+    } catch (err) {
+      show('Failed to load receptionists', 'error');
+    } finally {
+      setReceptionistsLoading(false);
+    }
+  }, [receptionistSearch, show]);
+
+  useEffect(() => {
+    if (state?.user?.role === 'owner') {
+      fetchCustomers();
+    }
+  }, [fetchCustomers, state?.user?.role]);
+
+  useEffect(() => {
+    if (state?.user?.role === 'owner') {
+      fetchReceptionists();
+    }
+  }, [fetchReceptionists, state?.user?.role]);
 
   const beginEditCustomer = (c) => {
     setEditingCustomerId(c._id);
@@ -129,18 +145,6 @@ const Dashboard = () => {
     try { await downloadApiFile('/reports/payments', 'payments-report.pdf'); }
     catch (e) { show(e?.message || 'Failed to download payments PDF', 'error'); }
   };
-
-  async function fetchReceptionists() {
-    try {
-      setReceptionistsLoading(true);
-      const resp = await getUsers({ search: receptionistSearch, role: 'receptionist', limit: 100 });
-      setReceptionists(resp?.data || []);
-    } catch (err) {
-      show('Failed to load receptionists', 'error');
-    } finally {
-      setReceptionistsLoading(false);
-    }
-  }
 
   const beginEditReceptionist = (r) => {
     setEditingReceptionistId(r._id);
@@ -177,28 +181,6 @@ const Dashboard = () => {
       show('Receptionist deleted', 'success');
     } catch (err) {
       show('Failed to delete receptionist', 'error');
-    }
-  };
-
-  const handleNewRecChange = (e) => {
-    const { name, value } = e.target;
-    setNewRec((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const addReceptionist = async () => {
-    try {
-      if (!newRec.name || !newRec.email) {
-        show('Name and Email are required', 'error');
-        return;
-      }
-      const payload = { ...newRec, role: 'receptionist' };
-      if (!payload.password && payload.nic) payload.password = payload.nic;
-      await createUser(payload);
-      setNewRec({ name: '', email: '', phone: '', address: '', nic: '', password: '' });
-      await fetchReceptionists();
-      show('Receptionist added. Initial password is NIC.', 'success');
-    } catch (err) {
-      show(err?.message || 'Failed to add receptionist', 'error');
     }
   };
 
@@ -337,36 +319,36 @@ const Dashboard = () => {
   const stats = [
     {
       name: 'Registered Vehicles',
-      value: String(state.cars.length),
+      value: String(state?.cars?.length || 0),
       icon: Car,
       gradient: 'from-blue-500 to-cyan-500',
       shadow: 'shadow-blue-500/20'
     },
     {
       name: 'Active Repair Jobs',
-      value: String(state.jobSheets.filter(job => job.status === 'in_progress').length),
+      value: String((state?.jobSheets || []).filter(job => job.status === 'in_progress').length),
       icon: Wrench,
       gradient: 'from-amber-500 to-orange-500',
       shadow: 'shadow-amber-500/20'
     },
     {
       name: 'Low Stock Alerts',
-      value: String(state.inventory.filter(item => item.quantity <= item.minThreshold).length),
+      value: String((state?.inventory || []).filter(item => item.quantity <= item.minThreshold).length),
       icon: AlertTriangle,
       gradient: 'from-rose-500 to-red-500',
       shadow: 'shadow-rose-500/20'
     },
     {
       name: 'Total Revenue',
-      value: `$${state.payments.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)}`,
+      value: `$${(state?.payments || []).reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)}`,
       icon: DollarSign,
       gradient: 'from-emerald-500 to-teal-500',
       shadow: 'shadow-emerald-500/20'
     }
   ];
 
-  const recentJobs = state.jobSheets.slice(0, 5);
-  const lowStockItems = state.inventory.filter(item => item.quantity <= item.minThreshold);
+  const recentJobs = (state?.jobSheets || []).slice(0, 5);
+  const lowStockItems = (state?.inventory || []).filter(item => item.quantity <= item.minThreshold);
 
   return (
     <div className="space-y-8">
@@ -378,7 +360,7 @@ const Dashboard = () => {
             <span>Workshop Command Center</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-            Welcome back, {state.user.name}!
+            Welcome back, {state?.user?.name || 'User'}!
           </h1>
           <p className="mt-1 text-sm text-slate-400 font-light">
             Here's a real-time overview of garage operations, appointments, and inventory health.
@@ -394,7 +376,7 @@ const Dashboard = () => {
 
       {/* Stats Grid */}
       <StaggerContainer className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, idx) => {
+        {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <StaggerItem key={stat.name} variant="scale-up">
@@ -436,7 +418,7 @@ const Dashboard = () => {
             <div className="space-y-3">
               {recentJobs.length > 0 ? (
                 recentJobs.map((job) => {
-                  const car = state.cars.find(c => c.id === job.carId);
+                  const car = (state?.cars || []).find(c => c.id === job.carId);
                   return (
                     <div key={job.id} className="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800/80 hover:border-slate-700 transition-colors">
                       <div>

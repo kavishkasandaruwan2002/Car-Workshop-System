@@ -8,6 +8,8 @@ import paymentRoutes from './payment.routes.js';
 import mechanicRoutes from './mechanic.routes.js';
 import appointmentRoutes from './appointment.routes.js';
 import reportRoutes from './report.routes.js';
+import invoiceRoutes from './invoice.routes.js';
+import serviceRoutes from './service.routes.js';
 
 const router = Router();
 
@@ -20,7 +22,7 @@ router.use('/payments', paymentRoutes);
 router.use('/mechanics', mechanicRoutes);
 router.use('/appointments', appointmentRoutes);
 router.use('/reports', reportRoutes);
+router.use('/invoices', invoiceRoutes);
+router.use('/services', serviceRoutes);
 
 export default router;
-
-

@@ -1,0 +1,1 @@
+﻿[31merror[39m: Failed to start server querySrv ENOTFOUND _mongodb._tcp.cluster0.tukmzmh.mongodb.net {"code":"ENOTFOUND","stack":"Error: querySrv ENOTFOUND _mongodb._tcp.cluster0.tukmzmh.mongodb.net\n    at QueryReqWrap.onresolve [as oncomplete] (node:internal/dns/promises:294:17)","timestamp":"2026-02-25T05:19:07.169Z"}
