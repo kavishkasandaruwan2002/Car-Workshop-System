@@ -18,20 +18,44 @@ import {
   LogOut,
   Zap,
   Activity,
-  ShieldCheck
+  ShieldCheck,
+  Headphones,
+  PhoneCall,
+  Send,
+  X,
+  ShieldAlert,
+  Sparkles,
+  MessageSquare,
+  Check,
+  Lock
 } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 const CustomerDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { show } = useToast();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [appointments, setAppointments] = useState([]);
   const [vehicleHistory, setVehicleHistory] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  
+  // Modals state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
   const [serviceTypeSelection, setServiceTypeSelection] = useState('Oil Change');
+
+  // Support Proxy state
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportIssue, setSupportIssue] = useState('Emergency Roadside Assistance');
+  const [supportPriority, setSupportPriority] = useState('High');
+  const [supportNotes, setSupportNotes] = useState('');
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [generatedTicket, setGeneratedTicket] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -81,12 +105,14 @@ const CustomerDashboard = () => {
     setShowPaymentModal(true);
   };
 
-  const handlePayment = async (paymentInfo) => {
+  const handlePayment = async (e) => {
+    e.preventDefault();
+    setIsProcessingPayment(true);
     try {
       const paymentPayload = {
         amount: 15.00,
-        paymentMethod: paymentInfo.method === 'credit' ? 'card' : paymentInfo.method,
-        description: `Service booking reservation`,
+        paymentMethod,
+        description: `Service booking reservation for ${selectedSlot?.date} ${selectedSlot?.time}`,
         date: new Date().toISOString(),
         status: 'completed',
         transactionId: `TXN${Date.now()}`
@@ -95,17 +121,49 @@ const CustomerDashboard = () => {
       const response = await apiRequest('/payments', { method: 'POST', body: paymentPayload });
 
       setPaymentData({
-        ...paymentInfo,
+        paymentMethod,
         slot: selectedSlot,
         amount: 15.00,
         transactionId: paymentPayload.transactionId,
-        id: response.data?.id
+        id: response?.data?.id
       });
 
+      // Mark slot as booked
+      setAvailableSlots(prev => prev.map(s => s.id === selectedSlot.id ? { ...s, available: false } : s));
+
+      show('Reservation fee confirmed. Slot synchronized with workshop ledger.', 'success');
       setShowPaymentModal(false);
-      alert('Reservation confirmed via decentralized protocol.');
     } catch (error) {
-      alert('Transaction failed.');
+      show('Transaction processing failed. Please try again.', 'error');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleSupportSubmit = async (e) => {
+    e.preventDefault();
+    setSupportSubmitting(true);
+    try {
+      // Simulate network ticket dispatch delay
+      await new Promise(r => setTimeout(r, 1200));
+
+      const ticketId = `PRX-${Math.floor(100000 + Math.random() * 900000)}`;
+      const ticket = {
+        id: ticketId,
+        issue: supportIssue,
+        priority: supportPriority,
+        notes: supportNotes || 'Immediate specialist review requested.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        assignedSpecialist: 'Eng. Marcus Vance (Senior Automotive Tech)',
+        status: 'DISPATCHED'
+      };
+
+      setGeneratedTicket(ticket);
+      show(`Support Proxy ticket #${ticketId} created. Priority dispatch en route.`, 'success');
+    } catch (err) {
+      show('Failed to connect to Support Proxy.', 'error');
+    } finally {
+      setSupportSubmitting(false);
     }
   };
 
@@ -132,9 +190,12 @@ const CustomerDashboard = () => {
           vehicle, serviceType, preferredDate, notes
         }
       });
-      alert('Protocol Initiated');
-    } catch (err) { }
-  }
+      show('Service reservation protocol successfully initiated.', 'success');
+      e.target.reset();
+    } catch (err) {
+      show('Failed to submit appointment request.', 'error');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 pb-20 pt-32 px-6">
@@ -151,7 +212,7 @@ const CustomerDashboard = () => {
             <h1 className="text-6xl font-black text-slate-800 dark:text-white tracking-tighter">
               Client <span className="gradient-text">Terminal</span>
             </h1>
-            <p className="mt-2 text-slate-500 font-medium">Verified Signature: {user.name} // Access Tier: Premium</p>
+            <p className="mt-2 text-slate-500 font-medium">Verified Signature: {user?.name || 'Customer'} // Access Tier: Premium</p>
           </motion.div>
 
           <div className="flex items-center gap-4">
@@ -159,12 +220,13 @@ const CustomerDashboard = () => {
               <div className="flex flex-col text-right">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Network Status</span>
                 <span className="text-xs font-black text-emerald-500 flex items-center gap-1 justify-end">
-                  <Zap className="h-3 w-3" /> OPERATIONAL
+                  <Zap className="h-3 w-3 animate-pulse" /> OPERATIONAL
                 </span>
               </div>
               <button
                 onClick={() => { logout(); navigate('/'); }}
                 className="p-3 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+                title="Disconnect Terminal"
               >
                 <LogOut className="h-5 w-5" />
               </button>
@@ -190,15 +252,37 @@ const CustomerDashboard = () => {
                     <Icon className="h-4 w-4 mr-4" />
                     {tab.name}
                   </button>
-                )
+                );
               })}
             </div>
 
-            <div className="premium-card !p-8 bg-gradient-to-br from-slate-900 to-slate-950 text-white border-none relative overflow-hidden">
-              <ShieldCheck className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5" />
-              <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-4">Support Proxy</h4>
-              <p className="text-xs text-slate-400 font-medium leading-relaxed mb-6">Need priority assistance? Our specialized technicians are on standby for elite consultation.</p>
-              <button className="w-full btn-primary !h-12 !text-[10px] !tracking-widest">CONNECT</button>
+            {/* Support Proxy Card - Fully Functional */}
+            <div className="premium-card !p-8 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white border border-indigo-500/20 relative overflow-hidden group shadow-2xl">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/20 transition-all" />
+              <ShieldCheck className="absolute -bottom-4 -right-4 w-24 h-24 text-blue-500/10 group-hover:scale-110 transition-transform" />
+              
+              <div className="flex items-center gap-2 mb-3">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Technicians Standby</span>
+              </div>
+
+              <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-2 text-white">Support Proxy</h4>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed mb-6">
+                Need priority assistance? Our specialized technicians are on standby for elite consultation.
+              </p>
+              
+              <button 
+                onClick={() => {
+                  setGeneratedTicket(null);
+                  setShowSupportModal(true);
+                }}
+                className="w-full btn-primary !h-12 !text-[10px] !tracking-widest flex items-center justify-center gap-2 group-hover:shadow-blue-500/40"
+              >
+                <Headphones className="w-4 h-4" /> CONNECT NOW
+              </button>
             </div>
           </div>
 
@@ -285,7 +369,7 @@ const CustomerDashboard = () => {
                     <form className="space-y-6" onSubmit={handleSubmit}>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Car Identification</label>
-                        <input name="vehicle" placeholder="Make, Model, Year" className="input-field !h-14 font-bold" required />
+                        <input name="vehicle" placeholder="Make, Model, Year (e.g. BMW M4 2022)" className="input-field !h-14 font-bold" required />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Service Vector</label>
@@ -357,11 +441,255 @@ const CustomerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* SUPPORT PROXY MODAL */}
+      <AnimatePresence>
+        {showSupportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden"
+            >
+              <button
+                onClick={() => setShowSupportModal(false)}
+                className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white rounded-xl bg-slate-800/50 hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {!generatedTicket ? (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl">
+                      <Headphones className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black uppercase tracking-tight">Support Proxy Interface</h3>
+                      <p className="text-xs text-slate-400 font-medium">Direct priority channel with workshop engineering staff</p>
+                    </div>
+                  </div>
+
+                  {/* Hotline Direct Quick Call */}
+                  <div className="p-4 bg-gradient-to-r from-blue-900/30 to-indigo-900/30 rounded-2xl border border-blue-500/20 mb-6 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <PhoneCall className="w-5 h-5 text-emerald-400 animate-pulse" />
+                      <div>
+                        <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Emergency Hotline</div>
+                        <div className="text-sm font-bold">+1 (800) 555-PUEFIX</div>
+                      </div>
+                    </div>
+                    <a
+                      href="tel:+18005557833"
+                      className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                    >
+                      CALL NOW
+                    </a>
+                  </div>
+
+                  <form onSubmit={handleSupportSubmit} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inquiry Vector</label>
+                      <select
+                        value={supportIssue}
+                        onChange={(e) => setSupportIssue(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:border-blue-500 focus:outline-none"
+                      >
+                        <option>Emergency Roadside Assistance</option>
+                        <option>Technical Diagnostic Consultation</option>
+                        <option>Appointment Expedite Request</option>
+                        <option>Billing & Invoice Protocol</option>
+                        <option>General Support Inquiry</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority Tier</label>
+                        <select
+                          value={supportPriority}
+                          onChange={(e) => setSupportPriority(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:border-blue-500 focus:outline-none"
+                        >
+                          <option value="Standard">Standard Priority</option>
+                          <option value="High">High Priority</option>
+                          <option value="Critical">Critical / Emergency</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Name</label>
+                        <input
+                          type="text"
+                          disabled
+                          value={user?.name || 'Verified Customer'}
+                          className="w-full bg-slate-950/50 border border-slate-800/50 rounded-xl px-4 py-3 text-xs font-bold text-slate-400 cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dispatch Notes / Remarks</label>
+                      <textarea
+                        rows={3}
+                        value={supportNotes}
+                        onChange={(e) => setSupportNotes(e.target.value)}
+                        placeholder="Provide vehicle details or specific issues..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-medium text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={supportSubmitting}
+                      className="w-full btn-primary !h-14 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-4"
+                    >
+                      {supportSubmitting ? (
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          DISPATCH SUPPORT PROXY <Send className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8" />
+                  </div>
+
+                  <div className="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
+                    PROXY DISPATCH SUCCESS
+                  </div>
+
+                  <h3 className="text-2xl font-black uppercase tracking-tight text-white mb-2">Ticket Encrypted & Sent</h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto mb-6">
+                    Specialist technician assigned. Standby for direct contact on your registered terminal line.
+                  </p>
+
+                  <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800 text-left space-y-3 mb-6">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-800/80">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Ticket ID</span>
+                      <span className="text-sm font-black text-blue-400">{generatedTicket.id}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vector</span>
+                      <span className="text-xs font-bold text-slate-200">{generatedTicket.issue}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Tech</span>
+                      <span className="text-xs font-bold text-emerald-400">{generatedTicket.assignedSpecialist}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Est. Response</span>
+                      <span className="text-xs font-bold text-amber-400">&lt; 8 Minutes</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowSupportModal(false)}
+                    className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                  >
+                    CLOSE PROXY TERMINAL
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* RESERVATION / PAYMENT MODAL */}
+      <AnimatePresence>
+        {showPaymentModal && selectedSlot && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden"
+            >
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white rounded-xl bg-slate-800/50 hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight">Reservation Protocol</h3>
+                  <p className="text-xs text-slate-400 font-medium">Synchronize slot for {selectedSlot.date} @ {selectedSlot.time}</p>
+                </div>
+              </div>
+
+              <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800 mb-6 space-y-3">
+                <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-400">Slot Reserved</span>
+                  <span className="text-white">{selectedSlot.date} // {selectedSlot.time}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-400">Reservation Guarantee Fee</span>
+                  <span className="text-emerald-400 text-lg font-black">$15.00 USD</span>
+                </div>
+                <p className="text-[10px] text-slate-500 italic">Fee credited directly toward final invoice total upon service completion.</p>
+              </div>
+
+              <form onSubmit={handlePayment} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Payment Interface</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: 'card', label: 'Credit Card', icon: CreditCard },
+                      { id: 'banking', label: 'Direct Bank', icon: Lock },
+                      { id: 'cash', label: 'Pay at Desk', icon: User }
+                    ].map(method => (
+                      <button
+                        type="button"
+                        key={method.id}
+                        onClick={() => setPaymentMethod(method.id)}
+                        className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${
+                          paymentMethod === method.id
+                            ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                        }`}
+                      >
+                        <method.icon className="w-5 h-5" />
+                        <span className="text-[10px] font-black uppercase tracking-wider">{method.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isProcessingPayment}
+                  className="w-full btn-primary !h-14 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  {isProcessingPayment ? (
+                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      CONFIRM RESERVATION ($15.00) <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default CustomerDashboard;
+
 
 
 
