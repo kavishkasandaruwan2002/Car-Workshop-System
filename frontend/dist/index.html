@@ -1,21 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="PUEFix Garage - Complete workshop management solution"
-    />
-    <link rel="manifest" href="/manifest.json" />
-    <title>PUEFix Garage</title>
-    <script type="module" crossorigin src="/assets/index-BlPqs88g.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-B55umVrI.css">
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="PUEFix Garage - Complete workshop management solution" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>✅ PUEFix Garage - WORKSHOP SYSTEM</title>
+  <script>
+    window.onerror = function (msg, url, line, col, error) {
+      console.error('CRITICAL APP CRASH:', msg, error);
+      const root = document.getElementById('root');
+      if (root) {
+        root.innerHTML = `
+            <div style="padding: 40px; font-family: sans-serif; text-align: center; color: #e11d48; background: #fff1f2; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <h1 style="font-size: 4rem; margin: 0;">⚠️</h1>
+              <h2 style="font-size: 2rem; margin: 20px 0;">SYSTEM FAULT</h2>
+              <p style="max-width: 600px; line-height: 1.6;">The React application encountered a critical runtime exception during boot.</p>
+              <pre style="background: rgba(0,0,0,0.05); padding: 20px; border-radius: 10px; text-align: left; font-size: 0.8rem; overflow: auto; max-width: 90vw;">${msg}\nAt: ${url}:${line}:${col}</pre>
+              <button onclick="localStorage.clear(); location.reload();" style="margin-top: 20px; padding: 12px 24px; background: #e11d48; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Reset System Cache</button>
+            </div>
+          `;
+      }
+      return false;
+    };
+  </script>
+  <script type="module" crossorigin src="/assets/index-DIWAMBNQ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DIy6PoF7.css">
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+</body>
+
 </html>
