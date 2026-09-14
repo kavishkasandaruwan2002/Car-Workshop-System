@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Link } from 'react-router-dom';
 import { buildReportHTML, openPrint } from '../utils/report';
 import { downloadApiFile } from '../utils/download';
 import { apiRequest } from '../api/client';
+import { ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter } from '@/components/ui/ScrollReveal';
 import {
   Car,
   Wrench,
   Package,
   DollarSign,
-  DownloadCloud,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
@@ -20,7 +19,11 @@ import {
   X,
   Check,
   UserPlus,
-  Key
+  Key,
+  FileText,
+  Calendar,
+  Sparkles,
+  ArrowUpRight
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { getUsers, updateUser as updateUserApi, deleteUser as deleteUserApi, createUser, resetMechanicPasswordByNIC } from '../api/users';
@@ -58,7 +61,6 @@ const Dashboard = () => {
       try {
         const resp = await apiRequest('/appointments');
         const allAppointments = resp.data || [];
-        // Filter for upcoming appointments (future dates only) and sort by date
         const upcomingAppointments = allAppointments
           .filter(a => new Date(a.preferredDate) >= new Date())
           .sort((a, b) => new Date(a.preferredDate) - new Date(b.preferredDate));
@@ -303,7 +305,7 @@ const Dashboard = () => {
         typeof p.amount === 'number' ? p.amount.toFixed(2) : '-',
         p.method || '-',
         p.status || '-',
-        new Date(p.createdAt || Date.now()).toLocaleString()
+        new Date(p.createdAt || Date.now()).toLocaleDateString()
       ]);
       const html = buildReportHTML({ title: 'Payments Report', columns, rows });
       openPrint(html, 'payments-report.pdf');
@@ -334,32 +336,32 @@ const Dashboard = () => {
 
   const stats = [
     {
-      name: 'Total Cars',
-      value: state.cars.length,
+      name: 'Registered Vehicles',
+      value: String(state.cars.length),
       icon: Car,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100'
+      gradient: 'from-blue-500 to-cyan-500',
+      shadow: 'shadow-blue-500/20'
     },
     {
-      name: 'Active Jobs',
-      value: state.jobSheets.filter(job => job.status === 'in_progress').length,
+      name: 'Active Repair Jobs',
+      value: String(state.jobSheets.filter(job => job.status === 'in_progress').length),
       icon: Wrench,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100'
+      gradient: 'from-amber-500 to-orange-500',
+      shadow: 'shadow-amber-500/20'
     },
     {
-      name: 'Low Stock Items',
-      value: state.inventory.filter(item => item.quantity <= item.minThreshold).length,
+      name: 'Low Stock Alerts',
+      value: String(state.inventory.filter(item => item.quantity <= item.minThreshold).length),
       icon: AlertTriangle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100'
+      gradient: 'from-rose-500 to-red-500',
+      shadow: 'shadow-rose-500/20'
     },
     {
       name: 'Total Revenue',
       value: `$${state.payments.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)}`,
       icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100'
+      gradient: 'from-emerald-500 to-teal-500',
+      shadow: 'shadow-emerald-500/20'
     }
   ];
 
@@ -367,543 +369,490 @@ const Dashboard = () => {
   const lowStockItems = state.inventory.filter(item => item.quantity <= item.minThreshold);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Welcome back, {state.user.name}! Here's what's happening at your workshop.
-        </p>
-      </div>
+    <div className="space-y-8">
+      {/* Header Banner */}
+      <ScrollReveal variant="fade-down" className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-slate-900 p-6 rounded-3xl border border-blue-500/20 backdrop-blur-xl shadow-xl">
+        <div>
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Workshop Command Center</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            Welcome back, {state.user.name}!
+          </h1>
+          <p className="mt-1 text-sm text-slate-400 font-light">
+            Here's a real-time overview of garage operations, appointments, and inventory health.
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Link to="/dashboard/jobs" className="btn-primary">
+            <Wrench className="w-4 h-4" />
+            <span>New Repair Job</span>
+          </Link>
+        </div>
+      </ScrollReveal>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
+      <StaggerContainer className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.name} className="card">
-              <div className="flex items-center">
-                <div className={`flex-shrink-0 p-3 rounded-lg ${stat.bgColor}`}>
-                  <Icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+            <StaggerItem key={stat.name} variant="scale-up">
+              <div className={`glass-card p-6 relative overflow-hidden group hover:border-blue-400/40 transition-all duration-300 ${stat.shadow}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">{stat.name}</p>
+                    <h3 className="text-3xl font-extrabold text-white">
+                      {stat.value.startsWith('$') ? stat.value : <AnimatedCounter target={stat.value} />}
+                    </h3>
+                  </div>
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${stat.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
                 </div>
               </div>
-            </div>
+            </StaggerItem>
           );
         })}
-      </div>
+      </StaggerContainer>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Jobs */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Recent Jobs</h3>
-            <Link
-              to="/dashboard/jobs"
-              className="text-sm text-primary-600 hover:text-primary-500"
-            >
-              View all
-            </Link>
+        <ScrollReveal variant="fade-right">
+          <div className="glass-card p-6 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <Wrench className="w-5 h-5 text-blue-400" />
+                <h3 className="text-lg font-bold text-white">Recent Job Sheets</h3>
+              </div>
+              <Link
+                to="/dashboard/jobs"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center"
+              >
+                <span>View all</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {recentJobs.length > 0 ? (
+                recentJobs.map((job) => {
+                  const car = state.cars.find(c => c.id === job.carId);
+                  return (
+                    <div key={job.id} className="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800/80 hover:border-slate-700 transition-colors">
+                      <div>
+                        <p className="text-sm font-bold text-white">
+                          {car ? `${car.make} ${car.model}` : 'Unknown Vehicle'}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Mechanic: <span className="text-slate-200">{job.assignedMechanic || 'Unassigned'}</span>
+                        </p>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                        job.status === 'completed' 
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      }`}>
+                        {job.status === 'completed' ? 'Completed' : 'In Progress'}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center text-slate-500 text-sm">No recent job sheets.</div>
+              )}
+            </div>
           </div>
-          <div className="space-y-3">
-            {recentJobs.map((job) => {
-              const car = state.cars.find(c => c.id === job.carId);
-              return (
-                <div key={job.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {car ? `${car.make} ${car.model}` : 'Unknown Car'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Assigned to: {job.assignedMechanic}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      job.status === 'completed' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {job.status === 'completed' ? 'Completed' : 'In Progress'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        </ScrollReveal>
 
         {/* Low Stock Alert */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Low Stock Alert</h3>
-            <Link
-              to="/dashboard/inventory"
-              className="text-sm text-primary-600 hover:text-primary-500"
-            >
-              Manage inventory
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {lowStockItems.length > 0 ? (
-              lowStockItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {item.quantity} remaining (min: {item.minThreshold})
-                    </p>
-                  </div>
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                </div>
-              ))
-            ) : (
-              <div className="flex items-center justify-center p-6 text-gray-500">
-                <CheckCircle className="h-8 w-8 text-green-500 mr-2" />
-                <span>All items are well stocked</span>
+        <ScrollReveal variant="fade-left">
+          <div className="glass-card p-6 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="w-5 h-5 text-rose-400" />
+                <h3 className="text-lg font-bold text-white">Low Inventory Stock</h3>
               </div>
-            )}
+              <Link
+                to="/dashboard/inventory"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center"
+              >
+                <span>Inventory</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {lowStockItems.length > 0 ? (
+                lowStockItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3.5 bg-rose-950/20 border border-rose-900/40 rounded-xl">
+                    <div>
+                      <p className="text-sm font-bold text-rose-200">{item.name}</p>
+                      <p className="text-xs text-rose-400">
+                        {item.quantity} units remaining (min: {item.minThreshold})
+                      </p>
+                    </div>
+                    <AlertTriangle className="h-5 w-5 text-rose-400 animate-pulse" />
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-slate-400">
+                  <CheckCircle className="h-10 w-10 text-emerald-400 mb-2" />
+                  <span className="text-sm font-medium text-slate-300">All inventory items are well-stocked</span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Upcoming Appointments */}
-        <div className="card lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Upcoming Appointments</h3>
-          </div>
-          <div className="space-y-3">
-            {appointments.length > 0 ? (
-              appointments.slice(0, 6).map((a) => (
-                <div key={a.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{a.customerName} - {a.vehicle}</p>
-                    <p className="text-xs text-gray-500">{a.serviceType} on {new Date(a.preferredDate).toLocaleDateString()}</p>
-                  </div>
-                  <button
-                    onClick={() => navigate('/dashboard/jobs', { state: { prefillFromAppointment: a } })}
-                    className="text-primary-600 hover:text-primary-500 text-sm font-medium"
-                  >
-                    Create Job Sheet
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="flex items-center justify-center p-6 text-gray-500">
-                <span>No upcoming appointments</span>
+        <ScrollReveal variant="fade-up" className="lg:col-span-2">
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-bold text-white">Upcoming Customer Appointments</h3>
               </div>
-            )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {appointments.length > 0 ? (
+                appointments.slice(0, 6).map((a) => (
+                  <div key={a.id} className="flex items-center justify-between p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-blue-500/40 transition-colors">
+                    <div>
+                      <p className="text-sm font-bold text-white">{a.customerName} - <span className="text-cyan-400">{a.vehicle}</span></p>
+                      <p className="text-xs text-slate-400">{a.serviceType} • {new Date(a.preferredDate).toLocaleDateString()}</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/dashboard/jobs', { state: { prefillFromAppointment: a } })}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all"
+                    >
+                      Create Sheet
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center p-8 text-slate-500 text-sm">No upcoming appointments registered.</div>
+              )}
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
       </div>
 
-      {/* Customers (Owner only) */}
+      {/* Customers Table (Owner only) */}
       {state?.user?.role === 'owner' && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Customers</h3>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search customers..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-64"
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-              />
-            </div>
-          </div>
-          {customersLoading ? (
-            <div className="flex justify-center items-center p-6">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
-            </div>
-          ) : customers.length === 0 ? (
-            <div className="text-center p-8 text-gray-500">No customers found.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIC</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {customers.map((c) => (
-                    <tr key={c._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingCustomerId === c._id ? (
-                          <input
-                            type="text"
-                            value={editedCustomer.name}
-                            onChange={(e) => setEditedCustomer(prev => ({ ...prev, name: e.target.value }))}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                          />
-                        ) : (
-                          <div className="text-sm font-medium text-gray-900">{c.name}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingCustomerId === c._id ? (
-                          <input
-                            type="email"
-                            value={editedCustomer.email}
-                            onChange={(e) => setEditedCustomer(prev => ({ ...prev, email: e.target.value }))}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900">{c.email}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingCustomerId === c._id ? (
-                          <input
-                            type="tel"
-                            value={editedCustomer.phone}
-                            onChange={(e) => setEditedCustomer(prev => ({ ...prev, phone: e.target.value }))}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900">{c.phone || '—'}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingCustomerId === c._id ? (
-                          <input
-                            type="text"
-                            value={editedCustomer.address}
-                            onChange={(e) => setEditedCustomer(prev => ({ ...prev, address: e.target.value }))}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900">{c.address || '—'}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingCustomerId === c._id ? (
-                          <input
-                            type="text"
-                            value={editedCustomer.nic}
-                            onChange={(e) => setEditedCustomer(prev => ({ ...prev, nic: e.target.value }))}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900">{c.nic || '—'}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {editingCustomerId === c._id ? (
-                          <div className="flex justify-end space-x-2">
-                            <button onClick={cancelEditCustomer} className="text-gray-400 hover:text-gray-600" title="Cancel">
-                              <X className="h-5 w-5" />
-                            </button>
-                            <button onClick={() => saveCustomer(c._id)} className="text-green-600 hover:text-green-900" title="Save">
-                              <Check className="h-5 w-5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end space-x-3">
-                            <button onClick={() => beginEditCustomer(c)} className="text-blue-600 hover:text-blue-900" title="Edit">
-                              <Edit className="h-5 w-5" />
-                            </button>
-                            <button onClick={() => deleteCustomer(c._id)} className="text-red-600 hover:text-red-900" title="Delete">
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Reports (Owner and Receptionist) */}
-      {(state?.user?.role === 'owner' || state?.user?.role === 'receptionist') && (
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Reports</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={generateCarsReport} className="btn-secondary">Generate Car Profiles PDF</button>
-              <button onClick={downloadCarsReport} className="btn-secondary">Download Car Profiles PDF</button>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={generateJobsReport} className="btn-secondary">Generate Job Sheet PDF</button>
-              <button onClick={downloadJobsReport} className="btn-secondary">Download Job Sheet PDF</button>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={generateInventoryReport} className="btn-secondary">Generate Inventory PDF</button>
-              <button onClick={downloadInventoryReport} className="btn-secondary">Download Inventory PDF</button>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={generateMechanicsReport} className="btn-secondary">Generate Mechanics PDF</button>
-              <button onClick={downloadMechanicsReport} className="btn-secondary">Download Mechanics PDF</button>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={generatePaymentsReport} className="btn-secondary">Generate Payments PDF</button>
-              <button onClick={downloadPaymentsReport} className="btn-secondary">Download Payments PDF</button>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">Reports open in a new tab and can be saved as PDF via the browser's print dialog.</p>
-        </div>
-      )}
-
-      {/* Receptionists (Owner only) */}
-      {state?.user?.role === 'owner' && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Receptionists</h3>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <ScrollReveal variant="fade-up">
+          <div className="glass-card p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <h3 className="text-lg font-bold text-white">Customer Database</h3>
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search receptionists..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-64"
-                  value={receptionistSearch}
-                  onChange={(e) => setReceptionistSearch(e.target.value)}
+                  placeholder="Search customers by name/email..."
+                  className="input-field pl-10 py-2 text-sm"
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
                 />
               </div>
             </div>
-          </div>
-
-          {/* Add Receptionist */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              <input name="name" value={newRec.name} onChange={handleNewRecChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" placeholder="Name" />
-              <input name="email" value={newRec.email} onChange={handleNewRecChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" placeholder="Email" type="email" />
-              <input name="phone" value={newRec.phone} onChange={handleNewRecChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" placeholder="Phone" />
-              <input name="address" value={newRec.address} onChange={handleNewRecChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" placeholder="Address" />
-              <input name="nic" value={newRec.nic} onChange={handleNewRecChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" placeholder="NIC (used as password)" />
-              <input name="password" value={newRec.password} onChange={handleNewRecChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" placeholder="Password (defaults to NIC)" />
-            </div>
-            <div className="mt-3 flex justify-end">
-              <button onClick={addReceptionist} className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
-                <UserPlus className="h-4 w-4 mr-2" /> Add Receptionist
-              </button>
-            </div>
-          </div>
-
-          {receptionistsLoading ? (
-            <div className="flex justify-center items-center p-6">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
-            </div>
-          ) : receptionists.length === 0 ? (
-            <div className="text-center p-8 text-gray-500">No receptionists found.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIC</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {receptionists.map((r) => (
-                    <tr key={r._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingReceptionistId === r._id ? (
-                          <input value={editedReceptionist.name} onChange={(e)=>setEditedReceptionist(prev=>({...prev,name:e.target.value}))} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
-                        ) : (
-                          <div className="text-sm font-medium text-gray-900">{r.name}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingReceptionistId === r._id ? (
-                          <input type="email" value={editedReceptionist.email} onChange={(e)=>setEditedReceptionist(prev=>({...prev,email:e.target.value}))} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
-                        ) : (
-                          <div className="text-sm text-gray-900">{r.email}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingReceptionistId === r._id ? (
-                          <input value={editedReceptionist.phone} onChange={(e)=>setEditedReceptionist(prev=>({...prev,phone:e.target.value}))} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
-                        ) : (
-                          <div className="text-sm text-gray-900">{r.phone || '—'}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingReceptionistId === r._id ? (
-                          <input value={editedReceptionist.address} onChange={(e)=>setEditedReceptionist(prev=>({...prev,address:e.target.value}))} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
-                        ) : (
-                          <div className="text-sm text-gray-900">{r.address || '—'}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {editingReceptionistId === r._id ? (
-                          <input value={editedReceptionist.nic} onChange={(e)=>setEditedReceptionist(prev=>({...prev,nic:e.target.value}))} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
-                        ) : (
-                          <div className="text-sm text-gray-900">{r.nic || '—'}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {editingReceptionistId === r._id ? (
-                          <div className="flex justify-end space-x-2">
-                            <button onClick={cancelEditReceptionist} className="text-gray-400 hover:text-gray-600" title="Cancel"><X className="h-5 w-5" /></button>
-                            <button onClick={()=>saveReceptionist(r._id)} className="text-green-600 hover:text-green-900" title="Save"><Check className="h-5 w-5" /></button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end space-x-3">
-                            <button onClick={()=>beginEditReceptionist(r)} className="text-blue-600 hover:text-blue-900" title="Edit"><Edit className="h-5 w-5" /></button>
-                            <button onClick={()=>deleteReceptionist(r._id)} className="text-red-600 hover:text-red-900" title="Delete"><Trash2 className="h-5 w-5" /></button>
-                          </div>
-                        )}
-                      </td>
+            {customersLoading ? (
+              <div className="flex justify-center items-center p-8">
+                <div className="spinner" />
+              </div>
+            ) : customers.length === 0 ? (
+              <div className="text-center p-8 text-slate-500">No customers found.</div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-800">
+                <table className="min-w-full divide-y divide-slate-800">
+                  <thead className="bg-slate-900/90">
+                    <tr>
+                      <th className="table-header">Name</th>
+                      <th className="table-header">Email</th>
+                      <th className="table-header">Phone</th>
+                      <th className="table-header">Address</th>
+                      <th className="table-header">NIC</th>
+                      <th className="table-header text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
+                    {customers.map((c) => (
+                      <tr key={c._id} className="hover:bg-slate-800/40 transition-colors">
+                        <td className="table-cell">
+                          {editingCustomerId === c._id ? (
+                            <input
+                              type="text"
+                              value={editedCustomer.name}
+                              onChange={(e) => setEditedCustomer(prev => ({ ...prev, name: e.target.value }))}
+                              className="input-field py-1 text-sm"
+                            />
+                          ) : (
+                            <span className="font-bold text-white">{c.name}</span>
+                          )}
+                        </td>
+                        <td className="table-cell">
+                          {editingCustomerId === c._id ? (
+                            <input
+                              type="email"
+                              value={editedCustomer.email}
+                              onChange={(e) => setEditedCustomer(prev => ({ ...prev, email: e.target.value }))}
+                              className="input-field py-1 text-sm"
+                            />
+                          ) : (
+                            c.email
+                          )}
+                        </td>
+                        <td className="table-cell">
+                          {editingCustomerId === c._id ? (
+                            <input
+                              type="tel"
+                              value={editedCustomer.phone}
+                              onChange={(e) => setEditedCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                              className="input-field py-1 text-sm"
+                            />
+                          ) : (
+                            c.phone || '—'
+                          )}
+                        </td>
+                        <td className="table-cell">
+                          {editingCustomerId === c._id ? (
+                            <input
+                              type="text"
+                              value={editedCustomer.address}
+                              onChange={(e) => setEditedCustomer(prev => ({ ...prev, address: e.target.value }))}
+                              className="input-field py-1 text-sm"
+                            />
+                          ) : (
+                            c.address || '—'
+                          )}
+                        </td>
+                        <td className="table-cell">
+                          {editingCustomerId === c._id ? (
+                            <input
+                              type="text"
+                              value={editedCustomer.nic}
+                              onChange={(e) => setEditedCustomer(prev => ({ ...prev, nic: e.target.value }))}
+                              className="input-field py-1 text-sm"
+                            />
+                          ) : (
+                            c.nic || '—'
+                          )}
+                        </td>
+                        <td className="table-cell text-right">
+                          {editingCustomerId === c._id ? (
+                            <div className="flex justify-end space-x-2">
+                              <button onClick={cancelEditCustomer} className="p-1 text-slate-400 hover:text-white" title="Cancel">
+                                <X className="h-4 w-4" />
+                              </button>
+                              <button onClick={() => saveCustomer(c._id)} className="p-1 text-emerald-400 hover:text-emerald-300" title="Save">
+                                <Check className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex justify-end space-x-3">
+                              <button onClick={() => beginEditCustomer(c)} className="p-1 text-blue-400 hover:text-blue-300" title="Edit">
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button onClick={() => deleteCustomer(c._id)} className="p-1 text-rose-400 hover:text-rose-300" title="Delete">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </ScrollReveal>
       )}
 
-      {/* Mechanic (Owner only) */}
-      {state?.user?.role === 'owner' && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Mechanic - Reset Initial Password</h3>
-          </div>
-          <div className="flex flex-col md:flex-row gap-3 md:items-center">
-            <input
-              type="text"
-              placeholder="Enter Mechanic NIC"
-              className="block w-full md:w-80 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              value={mechanicNIC}
-              onChange={(e)=>setMechanicNIC(e.target.value)}
-            />
-            <button onClick={resetMechanicPassword} className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
-              <Key className="h-4 w-4 mr-2" /> Reset to NIC
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">This will set the mechanic's password to their NIC.</p>
-
-          {/* Add Mechanic Account */}
-          <div className="mt-6 bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-800 mb-3">Create Mechanic Login Account</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-              <input placeholder="Name" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newMechanicUser.name} onChange={(e)=>setNewMechanicUser(prev=>({...prev,name:e.target.value}))} />
-              <input placeholder="Email" type="email" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newMechanicUser.email} onChange={(e)=>setNewMechanicUser(prev=>({...prev,email:e.target.value}))} />
-              <input placeholder="Phone" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newMechanicUser.phone} onChange={(e)=>setNewMechanicUser(prev=>({...prev,phone:e.target.value}))} />
-              <input placeholder="NIC (used as password)" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newMechanicUser.nic} onChange={(e)=>setNewMechanicUser(prev=>({...prev,nic:e.target.value}))} />
-              <input placeholder="Password (defaults to NIC)" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newMechanicUser.password} onChange={(e)=>setNewMechanicUser(prev=>({...prev,password:e.target.value}))} />
+      {/* Quick Export Reports */}
+      {(state?.user?.role === 'owner' || state?.user?.role === 'receptionist') && (
+        <ScrollReveal variant="fade-up">
+          <div className="glass-card p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <FileText className="w-5 h-5 text-indigo-400" />
+              <h3 className="text-lg font-bold text-white">Export Official Reports</h3>
             </div>
-            <div className="mt-3 flex justify-end">
-              <button
-                onClick={async ()=>{
-                  try{
-                    if(!newMechanicUser.name || !newMechanicUser.email){ show('Name and Email are required','error'); return; }
-                    const payload={...newMechanicUser, role:'mechanic'};
-                    if(!payload.password && payload.nic) payload.password = payload.nic;
-                    await createUser(payload);
-                    setNewMechanicUser({ name:'', email:'', phone:'', nic:'', password:'' });
-                    show('Mechanic account created. Initial password is NIC.','success');
-                  }catch(err){ show(err?.message || 'Failed to create mechanic account','error'); }
-                }}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-              >
-                <UserPlus className="h-4 w-4 mr-2"/> Create Mechanic Account
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={generateCarsReport} className="btn-secondary text-xs">Print Car Profiles</button>
+                <button onClick={downloadCarsReport} className="btn-secondary text-xs">Download PDF</button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={generateJobsReport} className="btn-secondary text-xs">Print Job Sheets</button>
+                <button onClick={downloadJobsReport} className="btn-secondary text-xs">Download PDF</button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={generateInventoryReport} className="btn-secondary text-xs">Print Inventory</button>
+                <button onClick={downloadInventoryReport} className="btn-secondary text-xs">Download PDF</button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={generateMechanicsReport} className="btn-secondary text-xs">Print Mechanics</button>
+                <button onClick={downloadMechanicsReport} className="btn-secondary text-xs">Download PDF</button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={generatePaymentsReport} className="btn-secondary text-xs">Print Payments</button>
+                <button onClick={downloadPaymentsReport} className="btn-secondary text-xs">Download PDF</button>
+              </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
       )}
 
-      {/* Owners (Owner only) */}
+      {/* Staff Management (Owner only) */}
       {state?.user?.role === 'owner' && (
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Owners</h3>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-800 mb-3">Create Owner Account</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <input placeholder="Name" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newOwner.name} onChange={(e)=>setNewOwner(prev=>({...prev,name:e.target.value}))} />
-              <input placeholder="Email" type="email" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newOwner.email} onChange={(e)=>setNewOwner(prev=>({...prev,email:e.target.value}))} />
-              <input placeholder="NIC (used as password)" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newOwner.nic} onChange={(e)=>setNewOwner(prev=>({...prev,nic:e.target.value}))} />
-              <input placeholder="Password (defaults to NIC)" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" value={newOwner.password} onChange={(e)=>setNewOwner(prev=>({...prev,password:e.target.value}))} />
+        <ScrollReveal variant="fade-up">
+          <div className="glass-card p-6 space-y-6">
+            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-3">Staff & User Management</h3>
+
+            {/* Reset Password */}
+            <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800">
+              <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center">
+                <Key className="w-4 h-4 mr-2 text-amber-400" />
+                Reset Mechanic Password to NIC
+              </h4>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="Enter Mechanic NIC Number"
+                  className="input-field sm:w-80 py-2 text-sm"
+                  value={mechanicNIC}
+                  onChange={(e) => setMechanicNIC(e.target.value)}
+                />
+                <button onClick={resetMechanicPassword} className="btn-primary text-xs py-2">
+                  <span>Reset Password</span>
+                </button>
+              </div>
             </div>
-            <div className="mt-3 flex justify-end">
-              <button
-                onClick={async ()=>{
-                  try{
-                    if(!newOwner.name || !newOwner.email){ show('Name and Email are required','error'); return; }
-                    const payload={...newOwner, role:'owner'};
-                    if(!payload.password && payload.nic) payload.password = payload.nic;
-                    await createUser(payload);
-                    setNewOwner({ name:'', email:'', nic:'', password:'' });
-                    show('Owner account created. Initial password is NIC.','success');
-                  }catch(err){ show(err?.message || 'Failed to create owner account','error'); }
-                }}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-              >
-                <UserPlus className="h-4 w-4 mr-2"/> Create Owner Account
-              </button>
+
+            {/* Create Mechanic Account */}
+            <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800">
+              <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center">
+                <UserPlus className="w-4 h-4 mr-2 text-cyan-400" />
+                Create New Mechanic Login Account
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <input placeholder="Full Name" className="input-field py-2 text-sm" value={newMechanicUser.name} onChange={(e) => setNewMechanicUser(prev => ({ ...prev, name: e.target.value }))} />
+                <input placeholder="Email" type="email" className="input-field py-2 text-sm" value={newMechanicUser.email} onChange={(e) => setNewMechanicUser(prev => ({ ...prev, email: e.target.value }))} />
+                <input placeholder="Phone" className="input-field py-2 text-sm" value={newMechanicUser.phone} onChange={(e) => setNewMechanicUser(prev => ({ ...prev, phone: e.target.value }))} />
+                <input placeholder="NIC (Default Pass)" className="input-field py-2 text-sm" value={newMechanicUser.nic} onChange={(e) => setNewMechanicUser(prev => ({ ...prev, nic: e.target.value }))} />
+                <input placeholder="Custom Password" type="password" className="input-field py-2 text-sm" value={newMechanicUser.password} onChange={(e) => setNewMechanicUser(prev => ({ ...prev, password: e.target.value }))} />
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={async () => {
+                    try {
+                      if (!newMechanicUser.name || !newMechanicUser.email) { show('Name and Email are required', 'error'); return; }
+                      const payload = { ...newMechanicUser, role: 'mechanic' };
+                      if (!payload.password && payload.nic) payload.password = payload.nic;
+                      await createUser(payload);
+                      setNewMechanicUser({ name: '', email: '', phone: '', nic: '', password: '' });
+                      show('Mechanic account created.', 'success');
+                    } catch (err) { show(err?.message || 'Failed to create mechanic account', 'error'); }
+                  }}
+                  className="btn-primary text-xs py-2"
+                >
+                  <UserPlus className="h-4 w-4 mr-1.5" />
+                  <span>Create Mechanic</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Create Owner Account */}
+            <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800">
+              <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center">
+                <UserPlus className="w-4 h-4 mr-2 text-violet-400" />
+                Create Owner Account
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <input placeholder="Full Name" className="input-field py-2 text-sm" value={newOwner.name} onChange={(e) => setNewOwner(prev => ({ ...prev, name: e.target.value }))} />
+                <input placeholder="Email" type="email" className="input-field py-2 text-sm" value={newOwner.email} onChange={(e) => setNewOwner(prev => ({ ...prev, email: e.target.value }))} />
+                <input placeholder="NIC" className="input-field py-2 text-sm" value={newOwner.nic} onChange={(e) => setNewOwner(prev => ({ ...prev, nic: e.target.value }))} />
+                <input placeholder="Password" type="password" className="input-field py-2 text-sm" value={newOwner.password} onChange={(e) => setNewOwner(prev => ({ ...prev, password: e.target.value }))} />
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={async () => {
+                    try {
+                      if (!newOwner.name || !newOwner.email) { show('Name and Email are required', 'error'); return; }
+                      const payload = { ...newOwner, role: 'owner' };
+                      if (!payload.password && payload.nic) payload.password = payload.nic;
+                      await createUser(payload);
+                      setNewOwner({ name: '', email: '', nic: '', password: '' });
+                      show('Owner account created.', 'success');
+                    } catch (err) { show(err?.message || 'Failed to create owner account', 'error'); }
+                  }}
+                  className="btn-primary text-xs py-2"
+                >
+                  <UserPlus className="h-4 w-4 mr-1.5" />
+                  <span>Create Owner</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
       )}
 
       {/* Quick Actions */}
-      <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link
-            to="/dashboard/cars"
-            className="flex items-center p-4 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
-          >
-            <Car className="h-8 w-8 text-primary-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-primary-900">Add New Car</p>
-              <p className="text-xs text-primary-600">Register vehicle</p>
-            </div>
-          </Link>
-          
-          <Link
-            to="/dashboard/jobs"
-            className="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
-          >
-            <Wrench className="h-8 w-8 text-orange-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-orange-900">Create Job Sheet</p>
-              <p className="text-xs text-orange-600">Start new repair</p>
-            </div>
-          </Link>
-          
-          <Link
-            to="/dashboard/inventory"
-            className="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-          >
-            <Package className="h-8 w-8 text-green-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-green-900">Manage Inventory</p>
-              <p className="text-xs text-green-600">Update stock</p>
-            </div>
-          </Link>
-          
-          <Link
-            to="/dashboard/reports"
-            className="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-          >
-            <TrendingUp className="h-8 w-8 text-purple-600 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-purple-900">View Reports</p>
-              <p className="text-xs text-purple-600">Analytics & insights</p>
-            </div>
-          </Link>
+      <ScrollReveal variant="fade-up">
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-bold text-white mb-4">Quick Operations</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Link
+              to="/dashboard/cars"
+              className="flex items-center p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300 group"
+            >
+              <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform mr-4">
+                <Car className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Add Vehicle</p>
+                <p className="text-xs text-slate-400">Register new car</p>
+              </div>
+            </Link>
+
+            <Link
+              to="/dashboard/jobs"
+              className="flex items-center p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800 transition-all duration-300 group"
+            >
+              <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform mr-4">
+                <Wrench className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Create Job Sheet</p>
+                <p className="text-xs text-slate-400">Start repair job</p>
+              </div>
+            </Link>
+
+            <Link
+              to="/dashboard/inventory"
+              className="flex items-center p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800 transition-all duration-300 group"
+            >
+              <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform mr-4">
+                <Package className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Inventory Stock</p>
+                <p className="text-xs text-slate-400">Manage parts & items</p>
+              </div>
+            </Link>
+
+            <Link
+              to="/dashboard/reports"
+              className="flex items-center p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-violet-500/50 hover:bg-slate-800 transition-all duration-300 group"
+            >
+              <div className="p-3 rounded-xl bg-violet-500/10 text-violet-400 group-hover:scale-110 transition-transform mr-4">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Analytics Reports</p>
+                <p className="text-xs text-slate-400">View detailed stats</p>
+              </div>
+            </Link>
+          </div>
         </div>
-      </div>
+      </ScrollReveal>
     </div>
   );
 };
