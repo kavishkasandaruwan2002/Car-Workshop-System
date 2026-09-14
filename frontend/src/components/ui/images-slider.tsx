@@ -138,13 +138,6 @@ export const ImagesSlider = ({
         perspective: "1000px",
       }}
     >
-      {children}
-      {overlay && (
-        <div
-          className={cn("absolute inset-0 bg-black/60 z-40", overlayClassName)}
-        />
-      )}
-
       {areImagesLoaded && (
         <AnimatePresence>
           <motion.img
@@ -154,10 +147,21 @@ export const ImagesSlider = ({
             animate="visible"
             exit={direction === "up" ? "upExit" : "downExit"}
             variants={slideVariants}
-            className="image h-full w-full absolute inset-0 object-cover object-center"
+            className="image h-full w-full absolute inset-0 object-cover object-center pointer-events-none"
           />
         </AnimatePresence>
       )}
+
+      {overlay && (
+        <div
+          className={cn("absolute inset-0 bg-black/60 z-10 pointer-events-none", overlayClassName)}
+        />
+      )}
+
+      <div className="relative z-30 w-full h-full flex items-center justify-center pointer-events-auto">
+        {children}
+      </div>
     </div>
   );
 };
+

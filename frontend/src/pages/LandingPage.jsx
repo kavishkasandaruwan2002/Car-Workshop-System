@@ -146,13 +146,13 @@ const LandingPage = () => {
             ]}
           >
             {/* Subtle Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/30 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/30 z-10 pointer-events-none" />
 
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="z-20 flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto h-full"
+              className="relative z-30 flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto h-full pointer-events-auto"
             >
               {/* Badge Pill */}
               <motion.div 
